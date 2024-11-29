@@ -555,6 +555,9 @@ func (e *Engine) Draw(screen *ebiten.Image) {
 		txt := fmt.Sprintf("HP: %d", e.Player.Health)
 		text.Draw(screen, txt, face, 72, 72+36, color.RGBA{R: 0, G: 255, B: 0, A: 255})
 
+		tickTxt := fmt.Sprintf("Tick: %d", e.Tick)
+		text.Draw(screen, tickTxt, face, 72, 72+72, color.RGBA{R: 0, G: 255, B: 0, A: 255})
+
 		for i, it := range e.Player.Inventory.Items {
 			op := &ebiten.DrawImageOptions{}
 			op.GeoM.Translate(e.Camera.Width-float64(i+1)*72, 72)
@@ -682,13 +685,13 @@ func (e *Engine) Update(inp *input.Input) error {
 }
 
 func (e *Engine) ProcessPlayerInput(inp *input.Input) {
-	if e.Player.OnGround {
+	if e.Player.OnGround() {
 		e.Player.Acceleration.Y = 0
 	} else {
 		e.Player.Acceleration.Y = physics.GravityAcceleration
 	}
 
-	if (inp.IsKeyPressed(ebiten.KeySpace) || inp.IsKeyPressed(ebiten.KeyW)) && e.Player.OnGround {
+	if (inp.IsKeyPressed(ebiten.KeySpace) || inp.IsKeyPressed(ebiten.KeyW)) && e.Player.OnGroundCoyote() {
 		e.Player.Speed.Y = -5 * 2
 	}
 
@@ -737,7 +740,7 @@ func (e *Engine) AlignPlayerY() {
 		break
 	}
 
-	e.Player.OnGround = false
+	e.Player.SetOnGround(false, e.Tick)
 
 	if pv == nil {
 		return
@@ -746,7 +749,7 @@ func (e *Engine) AlignPlayerY() {
 	e.Player.Move(pv)
 
 	if pv.Y < 0 {
-		e.Player.OnGround = true
+		e.Player.SetOnGround(true, e.Tick)
 	} else {
 		e.Player.Speed.Y = 0
 	}

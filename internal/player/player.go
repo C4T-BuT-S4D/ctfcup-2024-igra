@@ -34,8 +34,11 @@ type Player struct {
 	Inventory *Inventory
 
 	LooksRight bool
-	OnGround   bool
 	Health     int
+
+	onGround       bool
+	onGroundCoyote bool
+	coyoteTick     int
 }
 
 func New(origin *geometry.Point, spriteManager *sprites.Manager) (*Player, error) {
@@ -66,6 +69,34 @@ func New(origin *geometry.Point, spriteManager *sprites.Manager) (*Player, error
 	}, nil
 }
 
+func (p *Player) SetOnGround(onGround bool, tick int) {
+	if onGround {
+		p.coyoteTick = 0
+		p.onGround = true
+		p.onGroundCoyote = true
+		return
+	}
+	p.onGround = false
+	if !p.onGroundCoyote {
+		return
+	}
+	if p.coyoteTick == 0 {
+		p.coyoteTick = tick
+	}
+	if tick-p.coyoteTick > 10 {
+		p.onGroundCoyote = false
+		p.coyoteTick = 0
+	}
+}
+
+func (p *Player) OnGround() bool {
+	return p.onGround
+}
+
+func (p *Player) OnGroundCoyote() bool {
+	return p.onGroundCoyote
+}
+
 func (p *Player) IsDead() bool {
 	return p.Health <= 0
 }
@@ -82,7 +113,7 @@ func (p *Player) Collect(it *item.Item) {
 func (p *Player) Image() *ebiten.Image {
 	prevAnimationName := p.currentAnimationName
 
-	if p.OnGround {
+	if p.OnGroundCoyote() {
 		if p.Speed.X == 0 {
 			p.currentAnimationName = StandingAnimation
 		} else {
