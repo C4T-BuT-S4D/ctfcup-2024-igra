@@ -82,6 +82,7 @@ type Engine struct {
 	activeNPC     *npc.NPC
 	dialogControl dialogControl
 
+	Muted    bool   `json:"-" msgpack:"-"`
 	Paused   bool   `json:"-" msgpack:"paused"`
 	Tick     int    `json:"-" msgpack:"tick"`
 	Level    string `json:"-" msgpack:"level"`
@@ -570,14 +571,19 @@ func (e *Engine) Update(inp *input.Input) error {
 	e.Tick++
 
 	if e.musicManager != nil {
-		switch {
-		default:
-			p := e.musicManager.GetPlayer(music.Background)
+		p := e.musicManager.GetPlayer(music.Background)
+		if !e.Muted {
 			p.Play()
-			if !p.IsPlaying() {
-				if err := p.Rewind(); err != nil {
-					panic(err)
-				}
+		}
+		if !e.Muted && !p.IsPlaying() {
+			if err := p.Rewind(); err != nil {
+				panic(err)
+			}
+		}
+		if inp.IsKeyNewlyPressed(ebiten.KeyM) {
+			e.Muted = !e.Muted
+			if e.Muted {
+				p.Pause()
 			}
 		}
 	}
