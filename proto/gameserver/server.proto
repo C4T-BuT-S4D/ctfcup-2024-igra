@@ -1,0 +1,68 @@
+syntax = "proto3";
+package gameserver;
+
+option go_package = "gameserver";
+
+message PingRequest {
+}
+
+message PingResponse {
+}
+
+message ClientEvent {
+  message KeysPressed {
+    repeated int32 keys_pressed = 1;
+    repeated int32 new_keys_pressed = 2;
+  }
+
+  KeysPressed keys_pressed = 1;
+}
+
+message ClientEventRequest {
+  ClientEvent event = 1;
+  string checksum = 2;
+}
+
+message EngineSnapshot {
+  bytes data = 1;
+}
+
+message DialogState {
+  bool finished = 1;
+  bool gave_item = 2;
+  string text = 3;
+}
+
+message GameEvent {
+  DialogState state = 1;
+}
+
+message ServerEvent {
+  oneof event {
+    EngineSnapshot snapshot = 1;
+    GameEvent game_event = 2;
+  }
+}
+
+message InventoryRequest {
+}
+
+message Inventory {
+  message Item {
+    string name = 1;
+    bool important = 2;
+  }
+
+  repeated Item items = 1;
+}
+
+message InventoryResponse {
+  Inventory inventory = 1;
+  int64 round = 2;
+}
+
+service GameServerService {
+  rpc Ping(PingRequest) returns (PingResponse);
+  rpc ProcessEvent(stream ClientEventRequest) returns (stream ServerEvent);
+  rpc GetInventory(InventoryRequest) returns (InventoryResponse);
+}
