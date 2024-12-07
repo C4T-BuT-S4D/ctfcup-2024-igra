@@ -8,4 +8,5 @@ const (
 	Portal Type = "portal"
 	Bullet Type = "bullet"
 	HP     Type = "hp"
+	BG     Type = "bg"
 )

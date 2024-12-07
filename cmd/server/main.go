@@ -128,7 +128,7 @@ func main() {
 		}
 	}()
 
-	ebiten.SetWindowTitle("ctfcup-2023-igra server")
+	ebiten.SetWindowTitle("ctfcup-2024-igra server")
 	ebiten.SetWindowResizingMode(ebiten.WindowResizingModeOnlyFullscreenEnabled)
 
 	if *headless {

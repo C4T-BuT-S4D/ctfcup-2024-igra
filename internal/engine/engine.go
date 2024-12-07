@@ -14,10 +14,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/Rulox/ebitmx"
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/text"
-	"github.com/salviati/go-tmx/tmx"
+	"github.com/lafriks/go-tiled"
 	"github.com/samber/lo"
 	"github.com/vmihailenco/msgpack/v5"
 	"golang.org/x/exp/slices"
@@ -74,13 +73,14 @@ type Engine struct {
 
 	StartSnapshot *Snapshot `json:"-" msgpack:"-"`
 
-	fontsManager  *fonts.Manager
-	spriteManager *sprites.Manager
-	musicManager  *music.Manager
-	snapshotsDir  string
-	playerSpawn   *geometry.Point
-	activeNPC     *npc.NPC
-	dialogControl dialogControl
+	fontsManager    *fonts.Manager
+	spriteManager   *sprites.Manager
+	musicManager    *music.Manager
+	snapshotsDir    string
+	playerSpawn     *geometry.Point
+	activeNPC       *npc.NPC
+	dialogControl   dialogControl
+	backgroundImage *ebiten.Image
 
 	Muted    bool   `json:"-" msgpack:"-"`
 	Paused   bool   `json:"-" msgpack:"paused"`
@@ -90,17 +90,9 @@ type Engine struct {
 	TeamName string `json:"-" msgpack:"-"`
 }
 
-func getProperties(o *tmx.Object) map[string]string {
-	properties := make(map[string]string)
-	for _, p := range o.Properties {
-		properties[p.Name] = p.Value
-	}
-	return properties
-}
-
 var ErrNoPlayerSpawn = errors.New("no player spawn found")
 
-func findPlayerSpawn(tileMap *tmx.Map) (*geometry.Point, error) {
+func findPlayerSpawn(tileMap *tiled.Map) (*geometry.Point, error) {
 	for _, og := range tileMap.ObjectGroups {
 		for _, o := range og.Objects {
 			if o.Type == "player_spawn" {
@@ -115,18 +107,8 @@ func findPlayerSpawn(tileMap *tmx.Map) (*geometry.Point, error) {
 	return nil, ErrNoPlayerSpawn
 }
 
-func getTileImgByID(tileID tmx.ID, tileSet *ebitmx.EbitenTileset, img *ebiten.Image) *ebiten.Image {
-	id := int(tileID)
-
-	x0 := (id % tileSet.TilesetWidth) * tileSet.TileWidth
-	y0 := (id / tileSet.TilesetWidth) * tileSet.TileHeight
-	x1, y1 := x0+tileSet.TileWidth, y0+tileSet.TileHeight
-
-	return img.SubImage(image.Rect(x0, y0, x1, y1)).(*ebiten.Image)
-}
-
 func New(config Config, spriteManager *sprites.Manager, fontsManager *fonts.Manager, musicManager *music.Manager, dialogProvider dialog.Provider) (*Engine, error) {
-	var resultImage *ebiten.Image
+	var tilesImage *ebiten.Image
 	imgFile, err := resources.EmbeddedFS.Open("tiles/result.png")
 	if err != nil {
 		return nil, fmt.Errorf("failed to open tileset: %w", err)
@@ -137,50 +119,54 @@ func New(config Config, spriteManager *sprites.Manager, fontsManager *fonts.Mana
 		return nil, fmt.Errorf("failed to decode tileset: %w", err)
 	}
 
-	resultImage = ebiten.NewImageFromImage(img)
+	tilesImage = ebiten.NewImageFromImage(img)
 
 	mapFile, err := resources.EmbeddedFS.Open(fmt.Sprintf("levels/%s.tmx", config.Level))
 	if err != nil {
 		return nil, fmt.Errorf("failed to open map: %w", err)
 	}
+	defer mapFile.Close()
 
-	testMap, err := tmx.Read(mapFile)
+	tmap, err := tiled.LoadReader("levels", mapFile, tiled.WithFileSystem(resources.EmbeddedFS))
 	if err != nil {
-		return nil, fmt.Errorf("failed to decode map: %w", err)
-	}
-
-	iceTiles, err := ebitmx.GetTilesetFromFS(resources.EmbeddedFS, "tiles/ice.tsx")
-	if err != nil {
-		return nil, fmt.Errorf("failed to get tileset: %w", err)
+		return nil, fmt.Errorf("failed to load map: %w", err)
 	}
 
 	var mapTiles []*tiles.StaticTile
 
-	for _, l := range testMap.Layers {
-		for x := 0; x < testMap.Width; x++ {
-			for y := 0; y < testMap.Height; y++ {
-				dt := l.DecodedTiles[y*testMap.Width+x]
+	for _, l := range tmap.Layers {
+		for x := 0; x < tmap.Width; x++ {
+			for y := 0; y < tmap.Height; y++ {
+				dt := l.Tiles[y*tmap.Width+x]
 				if dt.IsNil() {
 					continue
 				}
 
+				spriteRect := dt.Tileset.GetTileRect(dt.ID)
+
+				tileImage := tilesImage.SubImage(spriteRect).(*ebiten.Image)
+
+				w, h := tmap.TileWidth, tmap.TileHeight
 				mapTiles = append(
 					mapTiles,
 					tiles.NewStaticTile(
 						&geometry.Point{
-							X: float64(x * testMap.TileWidth),
-							Y: float64(y * testMap.TileHeight),
+							X: float64(x * w),
+							Y: float64(y * h),
 						},
-						testMap.TileWidth,
-						testMap.TileHeight,
-						getTileImgByID(dt.ID, iceTiles, resultImage),
+						w,
+						h,
+						tileImage,
 					),
 				)
 			}
 		}
+
 	}
 
-	playerPos, err := findPlayerSpawn(testMap)
+	bgImage := spriteManager.GetSprite(sprites.Type(tmap.Properties.GetString("background")))
+
+	playerPos, err := findPlayerSpawn(tmap)
 	if err != nil {
 		return nil, fmt.Errorf("can't find player position: %w", err)
 	}
@@ -197,15 +183,14 @@ func New(config Config, spriteManager *sprites.Manager, fontsManager *fonts.Mana
 	winPoints := make(map[string]*geometry.Point)
 	portalsMap := make(map[string]*portal.Portal)
 
-	for _, og := range testMap.ObjectGroups {
+	for _, og := range tmap.ObjectGroups {
 		for _, o := range og.Objects {
-			props := getProperties(&o)
 			switch o.Type {
 			case "item":
 				img := ebiten.NewImage(int(o.Width), int(o.Height))
 				img.Fill(color.RGBA{R: 0xff, G: 0x00, B: 0x00, A: 0xff})
 
-				if sprite := props["sprite"]; sprite != "" {
+				if sprite := o.Properties.GetString("sprite"); sprite != "" {
 					img = spriteManager.GetSprite(sprites.Type(sprite))
 				}
 
@@ -218,30 +203,27 @@ func New(config Config, spriteManager *sprites.Manager, fontsManager *fonts.Mana
 					o.Height,
 					img,
 					o.Name,
-					props["important"] == "true",
+					o.Properties.GetBool("important"),
 				))
 			case "portal":
-				img := spriteManager.GetSprite(sprites.Portal)
 				portalsMap[o.Name] = portal.New(
 					&geometry.Point{
 						X: o.X,
 						Y: o.Y,
 					},
-					img,
+					spriteManager.GetSprite(sprites.Portal),
 					o.Width,
 					o.Height,
-					props["portal-to"],
+					o.Properties.GetString("portal-to"),
 					nil,
-					props["boss"])
+					o.Properties.GetString("boss"))
 			case "spike":
-				img := spriteManager.GetSprite(sprites.Spike)
-
 				spikes = append(spikes, damage.NewSpike(
 					&geometry.Point{
 						X: o.X,
 						Y: o.Y,
 					},
-					img,
+					spriteManager.GetSprite(sprites.Spike),
 					o.Width,
 					o.Height,
 				))
@@ -253,8 +235,8 @@ func New(config Config, spriteManager *sprites.Manager, fontsManager *fonts.Mana
 					o.Width,
 					o.Height))
 			case "npc":
-				img := spriteManager.GetSprite(sprites.Type(props["sprite"]))
-				dimg := spriteManager.GetSprite(sprites.Type(props["dialog-sprite"]))
+				img := spriteManager.GetSprite(sprites.Type(o.Properties.GetString("sprite")))
+				dimg := spriteManager.GetSprite(sprites.Type(o.Properties.GetString("dialog-sprite")))
 				npcd, err := dialogProvider.Get(o.Name)
 				if err != nil {
 					return nil, fmt.Errorf("getting '%s' dialog: %w", o.Name, err)
@@ -269,7 +251,7 @@ func New(config Config, spriteManager *sprites.Manager, fontsManager *fonts.Mana
 					o.Width,
 					o.Height,
 					npcd,
-					props["item"],
+					o.Properties.GetString("item"),
 				))
 			case "boss-win":
 				winPoints[o.Name] = &geometry.Point{X: o.X, Y: o.Y}
@@ -320,21 +302,22 @@ func New(config Config, spriteManager *sprites.Manager, fontsManager *fonts.Mana
 	}
 
 	return &Engine{
-		Tiles:         mapTiles,
-		Camera:        cam,
-		Player:        p,
-		Items:         items,
-		Portals:       portals,
-		Spikes:        spikes,
-		InvWalls:      invwalls,
-		NPCs:          npcs,
-		spriteManager: spriteManager,
-		fontsManager:  fontsManager,
-		musicManager:  musicManager,
-		snapshotsDir:  config.SnapshotsDir,
-		playerSpawn:   playerPos,
-		Level:         config.Level,
-		TeamName:      strings.Split(os.Getenv("AUTH_TOKEN"), ":")[0],
+		Tiles:           mapTiles,
+		Camera:          cam,
+		Player:          p,
+		Items:           items,
+		Portals:         portals,
+		Spikes:          spikes,
+		InvWalls:        invwalls,
+		NPCs:            npcs,
+		spriteManager:   spriteManager,
+		fontsManager:    fontsManager,
+		musicManager:    musicManager,
+		snapshotsDir:    config.SnapshotsDir,
+		playerSpawn:     playerPos,
+		backgroundImage: bgImage,
+		Level:           config.Level,
+		TeamName:        strings.Split(os.Getenv("AUTH_TOKEN"), ":")[0],
 		dialogControl: dialogControl{
 			maskInput: !dialogProvider.DisplayInput(),
 		},
@@ -491,6 +474,13 @@ func (e *Engine) Draw(screen *ebiten.Image) {
 	if e.IsWin {
 		e.drawYouWinScreen(screen)
 		return
+	}
+
+	if e.backgroundImage != nil {
+		op := &ebiten.DrawImageOptions{}
+		op.GeoM.Translate(0, 0)
+		op.GeoM.Scale(3.5, 3.5)
+		screen.DrawImage(e.backgroundImage, op)
 	}
 
 	for _, c := range e.Collisions(e.Camera.Rectangle()) {

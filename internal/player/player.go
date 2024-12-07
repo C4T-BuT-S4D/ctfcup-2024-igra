@@ -83,7 +83,7 @@ func (p *Player) SetOnGround(onGround bool, tick int) {
 	if p.coyoteTick == 0 {
 		p.coyoteTick = tick
 	}
-	if tick-p.coyoteTick > 10 {
+	if tick-p.coyoteTick > 5 {
 		p.onGroundCoyote = false
 		p.coyoteTick = 0
 	}

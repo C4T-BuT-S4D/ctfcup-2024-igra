@@ -13,11 +13,11 @@ import (
 	"github.com/sirupsen/logrus"
 	"golang.org/x/image/font"
 
-	gameserverpb "github.com/c4t-but-s4d/ctfcup-2023-igra/proto/go/gameserver"
 	"github.com/c4t-but-s4d/ctfcup-2024-igra/internal/camera"
 	"github.com/c4t-but-s4d/ctfcup-2024-igra/internal/engine"
 	"github.com/c4t-but-s4d/ctfcup-2024-igra/internal/fonts"
 	"github.com/c4t-but-s4d/ctfcup-2024-igra/internal/input"
+	gameserverpb "github.com/c4t-but-s4d/ctfcup-2024-igra/proto/go/gameserver"
 )
 
 var ErrGameShutdown = errors.New("game is shut down")
