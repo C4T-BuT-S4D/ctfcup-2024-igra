@@ -309,7 +309,7 @@
 </data>
  </layer>
  <imagelayer id="7" name="background" offsetx="350" offsety="350">
-  <image source="../tiles/foreground-empty.png" width="688" height="272"/>
+  <image source="../tiles/foreground-empty.png" width="1376" height="544"/>
  </imagelayer>
  <objectgroup id="2" name="objects">
   <object id="3" type="player_spawn" x="640" y="576">
