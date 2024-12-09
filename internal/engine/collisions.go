@@ -8,6 +8,13 @@ import (
 func (e *Engine) Collisions(r *geometry.Rectangle) []object.GenericObject {
 	var result []object.GenericObject
 
+	// Background image should be rendered first.
+	for _, bg := range e.BackgroundImages {
+		if bg.Rectangle().Intersects(r) {
+			result = append(result, bg)
+		}
+	}
+
 	if e.Player.Rectangle().Intersects(r) {
 		result = append(result, e.Player)
 	}

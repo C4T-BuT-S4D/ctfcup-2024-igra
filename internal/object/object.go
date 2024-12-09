@@ -15,6 +15,7 @@ const (
 	BossV1
 	BossV2
 	EnemyBullet
+	BackgroundImage
 )
 
 func (t Type) String() string {

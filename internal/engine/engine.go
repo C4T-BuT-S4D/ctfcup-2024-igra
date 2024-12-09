@@ -10,6 +10,7 @@ import (
 	"image"
 	"image/color"
 	"os"
+	"path"
 	"path/filepath"
 	"strings"
 	"time"
@@ -61,26 +62,26 @@ type dialogControl struct {
 }
 
 type Engine struct {
-	Tiles        []*tiles.StaticTile `json:"-" msgpack:"-"`
-	Camera       *camera.Camera      `json:"-" msgpack:"camera"`
-	Player       *player.Player      `json:"-" msgpack:"player"`
-	Items        []*item.Item        `json:"items" msgpack:"items"`
-	Portals      []*portal.Portal    `json:"-" msgpack:"portals"`
-	Spikes       []*damage.Spike     `json:"-" msgpack:"spikes"`
-	InvWalls     []*wall.InvWall     `json:"-" msgpack:"invWalls"`
-	NPCs         []*npc.NPC          `json:"-" msgpack:"npcs"`
-	EnemyBullets []*damage.Bullet    `json:"-" msgpack:"enemyBullets"`
+	Tiles            []*tiles.StaticTile      `json:"-" msgpack:"-"`
+	Camera           *camera.Camera           `json:"-" msgpack:"camera"`
+	Player           *player.Player           `json:"-" msgpack:"player"`
+	Items            []*item.Item             `json:"items" msgpack:"items"`
+	Portals          []*portal.Portal         `json:"-" msgpack:"portals"`
+	Spikes           []*damage.Spike          `json:"-" msgpack:"spikes"`
+	InvWalls         []*wall.InvWall          `json:"-" msgpack:"invWalls"`
+	NPCs             []*npc.NPC               `json:"-" msgpack:"npcs"`
+	EnemyBullets     []*damage.Bullet         `json:"-" msgpack:"enemyBullets"`
+	BackgroundImages []*tiles.BackgroundImage `json:"-" msgpack:"backgroundImages"`
 
 	StartSnapshot *Snapshot `json:"-" msgpack:"-"`
 
-	fontsManager    *fonts.Manager
-	spriteManager   *sprites.Manager
-	musicManager    *music.Manager
-	snapshotsDir    string
-	playerSpawn     *geometry.Point
-	activeNPC       *npc.NPC
-	dialogControl   dialogControl
-	backgroundImage *ebiten.Image
+	fontsManager  *fonts.Manager
+	spriteManager *sprites.Manager
+	musicManager  *music.Manager
+	snapshotsDir  string
+	playerSpawn   *geometry.Point
+	activeNPC     *npc.NPC
+	dialogControl dialogControl
 
 	Muted    bool   `json:"-" msgpack:"-"`
 	Paused   bool   `json:"-" msgpack:"paused"`
@@ -164,7 +165,31 @@ func New(config Config, spriteManager *sprites.Manager, fontsManager *fonts.Mana
 
 	}
 
-	bgImage := spriteManager.GetSprite(sprites.Type(tmap.Properties.GetString("background")))
+	var bgImages []*tiles.BackgroundImage
+	for _, l := range tmap.ImageLayers {
+		if l.Image == nil {
+			return nil, fmt.Errorf("background image layer is empty")
+		}
+		imgfile, err := resources.EmbeddedFS.Open(path.Join("levels/", l.Image.Source))
+		if err != nil {
+			return nil, fmt.Errorf("failed to open background image: %w", err)
+		}
+		img, _, err := image.Decode(imgfile)
+		if err != nil {
+			return nil, fmt.Errorf("failed to decode background image: %w", err)
+		}
+		bgImage := ebiten.NewImageFromImage(img)
+		bgImages = append(bgImages, &tiles.BackgroundImage{
+			StaticTile: *tiles.NewStaticTile(
+				&geometry.Point{
+					X: float64(l.OffsetX),
+					Y: float64(l.OffsetY),
+				},
+				l.Image.Width,
+				l.Image.Height,
+				bgImage),
+		})
+	}
 
 	playerPos, err := findPlayerSpawn(tmap)
 	if err != nil {
@@ -302,22 +327,22 @@ func New(config Config, spriteManager *sprites.Manager, fontsManager *fonts.Mana
 	}
 
 	return &Engine{
-		Tiles:           mapTiles,
-		Camera:          cam,
-		Player:          p,
-		Items:           items,
-		Portals:         portals,
-		Spikes:          spikes,
-		InvWalls:        invwalls,
-		NPCs:            npcs,
-		spriteManager:   spriteManager,
-		fontsManager:    fontsManager,
-		musicManager:    musicManager,
-		snapshotsDir:    config.SnapshotsDir,
-		playerSpawn:     playerPos,
-		backgroundImage: bgImage,
-		Level:           config.Level,
-		TeamName:        strings.Split(os.Getenv("AUTH_TOKEN"), ":")[0],
+		Tiles:            mapTiles,
+		BackgroundImages: bgImages,
+		Camera:           cam,
+		Player:           p,
+		Items:            items,
+		Portals:          portals,
+		Spikes:           spikes,
+		InvWalls:         invwalls,
+		NPCs:             npcs,
+		spriteManager:    spriteManager,
+		fontsManager:     fontsManager,
+		musicManager:     musicManager,
+		snapshotsDir:     config.SnapshotsDir,
+		playerSpawn:      playerPos,
+		Level:            config.Level,
+		TeamName:         strings.Split(os.Getenv("AUTH_TOKEN"), ":")[0],
 		dialogControl: dialogControl{
 			maskInput: !dialogProvider.DisplayInput(),
 		},
@@ -476,13 +501,6 @@ func (e *Engine) Draw(screen *ebiten.Image) {
 		return
 	}
 
-	if e.backgroundImage != nil {
-		op := &ebiten.DrawImageOptions{}
-		op.GeoM.Translate(0, 0)
-		op.GeoM.Scale(3.5, 3.5)
-		screen.DrawImage(e.backgroundImage, op)
-	}
-
 	for _, c := range e.Collisions(e.Camera.Rectangle()) {
 		visible := c.Rectangle().Sub(e.Camera.Rectangle())
 		base := geometry.Origin.Add(visible)
@@ -507,6 +525,9 @@ func (e *Engine) Draw(screen *ebiten.Image) {
 		)
 
 		switch c.Type() {
+		case object.BackgroundImage:
+			bi := c.(*tiles.BackgroundImage)
+			screen.DrawImage(bi.Image, op)
 		case object.StaticTileType:
 			t := c.(*tiles.StaticTile)
 			screen.DrawImage(t.Image, op)
