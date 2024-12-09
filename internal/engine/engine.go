@@ -704,6 +704,7 @@ func (e *Engine) ProcessPlayerInput(inp *input.Input) {
 
 	if (inp.IsKeyPressed(ebiten.KeySpace) || inp.IsKeyPressed(ebiten.KeyW)) && e.Player.OnGroundCoyote() {
 		e.Player.Speed.Y = -5 * 2
+		e.Player.ResetCoyote()
 	}
 
 	switch {

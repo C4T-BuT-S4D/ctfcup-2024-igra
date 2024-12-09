@@ -97,6 +97,11 @@ func (p *Player) OnGroundCoyote() bool {
 	return p.onGroundCoyote
 }
 
+func (p *Player) ResetCoyote() {
+	p.onGroundCoyote = false
+	p.coyoteTick = 0
+}
+
 func (p *Player) IsDead() bool {
 	return p.Health <= 0
 }
