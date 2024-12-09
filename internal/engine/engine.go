@@ -7,7 +7,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"image"
 	"image/color"
 	"os"
 	"path"
@@ -108,20 +107,23 @@ func findPlayerSpawn(tileMap *tiled.Map) (*geometry.Point, error) {
 	return nil, ErrNoPlayerSpawn
 }
 
-func New(config Config, spriteManager *sprites.Manager, fontsManager *fonts.Manager, musicManager *music.Manager, dialogProvider dialog.Provider) (*Engine, error) {
-	var tilesImage *ebiten.Image
-	imgFile, err := resources.EmbeddedFS.Open("tiles/result.png")
-	if err != nil {
-		return nil, fmt.Errorf("failed to open tileset: %w", err)
+type ResourceManager struct {
+	Sprites *sprites.Manager
+	Tiles   *tiles.Manager
+	Fonts   *fonts.Manager
+	Music   *music.Manager
+}
+
+func NewResourceManager() *ResourceManager {
+	return &ResourceManager{
+		Sprites: sprites.NewManager(),
+		Tiles:   tiles.NewManager(),
+		Fonts:   fonts.NewManager(),
+		Music:   music.NewManager(),
 	}
+}
 
-	img, _, err := image.Decode(imgFile)
-	if err != nil {
-		return nil, fmt.Errorf("failed to decode tileset: %w", err)
-	}
-
-	tilesImage = ebiten.NewImageFromImage(img)
-
+func New(config Config, resourceManager *ResourceManager, dialogProvider dialog.Provider) (*Engine, error) {
 	mapFile, err := resources.EmbeddedFS.Open(fmt.Sprintf("levels/%s.tmx", config.Level))
 	if err != nil {
 		return nil, fmt.Errorf("failed to open map: %w", err)
@@ -145,6 +147,11 @@ func New(config Config, spriteManager *sprites.Manager, fontsManager *fonts.Mana
 
 				spriteRect := dt.Tileset.GetTileRect(dt.ID)
 
+				if dt.Tileset.Image == nil {
+					return nil, fmt.Errorf("tileset image is empty")
+				}
+
+				tilesImage := resourceManager.Tiles.Get(dt.Tileset.Image.Source)
 				tileImage := tilesImage.SubImage(spriteRect).(*ebiten.Image)
 
 				w, h := tmap.TileWidth, tmap.TileHeight
@@ -170,15 +177,8 @@ func New(config Config, spriteManager *sprites.Manager, fontsManager *fonts.Mana
 		if l.Image == nil {
 			return nil, fmt.Errorf("background image layer is empty")
 		}
-		imgfile, err := resources.EmbeddedFS.Open(path.Join("levels/", l.Image.Source))
-		if err != nil {
-			return nil, fmt.Errorf("failed to open background image: %w", err)
-		}
-		img, _, err := image.Decode(imgfile)
-		if err != nil {
-			return nil, fmt.Errorf("failed to decode background image: %w", err)
-		}
-		bgImage := ebiten.NewImageFromImage(img)
+
+		bgImage := resourceManager.Tiles.Get(path.Base(l.Image.Source))
 		bgImages = append(bgImages, &tiles.BackgroundImage{
 			StaticTile: *tiles.NewStaticTile(
 				&geometry.Point{
@@ -196,7 +196,7 @@ func New(config Config, spriteManager *sprites.Manager, fontsManager *fonts.Mana
 		return nil, fmt.Errorf("can't find player position: %w", err)
 	}
 
-	p, err := player.New(playerPos, spriteManager)
+	p, err := player.New(playerPos, resourceManager.Sprites)
 	if err != nil {
 		return nil, fmt.Errorf("creating player: %w", err)
 	}
@@ -216,7 +216,7 @@ func New(config Config, spriteManager *sprites.Manager, fontsManager *fonts.Mana
 				img.Fill(color.RGBA{R: 0xff, G: 0x00, B: 0x00, A: 0xff})
 
 				if sprite := o.Properties.GetString("sprite"); sprite != "" {
-					img = spriteManager.GetSprite(sprites.Type(sprite))
+					img = resourceManager.Sprites.GetSprite(sprites.Type(sprite))
 				}
 
 				items = append(items, item.New(
@@ -236,7 +236,7 @@ func New(config Config, spriteManager *sprites.Manager, fontsManager *fonts.Mana
 						X: o.X,
 						Y: o.Y,
 					},
-					spriteManager.GetSprite(sprites.Portal),
+					resourceManager.Sprites.GetSprite(sprites.Portal),
 					o.Width,
 					o.Height,
 					o.Properties.GetString("portal-to"),
@@ -248,7 +248,7 @@ func New(config Config, spriteManager *sprites.Manager, fontsManager *fonts.Mana
 						X: o.X,
 						Y: o.Y,
 					},
-					spriteManager.GetSprite(sprites.Spike),
+					resourceManager.Sprites.GetSprite(sprites.Spike),
 					o.Width,
 					o.Height,
 				))
@@ -260,8 +260,8 @@ func New(config Config, spriteManager *sprites.Manager, fontsManager *fonts.Mana
 					o.Width,
 					o.Height))
 			case "npc":
-				img := spriteManager.GetSprite(sprites.Type(o.Properties.GetString("sprite")))
-				dimg := spriteManager.GetSprite(sprites.Type(o.Properties.GetString("dialog-sprite")))
+				img := resourceManager.Sprites.GetSprite(sprites.Type(o.Properties.GetString("sprite")))
+				dimg := resourceManager.Sprites.GetSprite(sprites.Type(o.Properties.GetString("dialog-sprite")))
 				npcd, err := dialogProvider.Get(o.Name)
 				if err != nil {
 					return nil, fmt.Errorf("getting '%s' dialog: %w", o.Name, err)
@@ -336,9 +336,9 @@ func New(config Config, spriteManager *sprites.Manager, fontsManager *fonts.Mana
 		Spikes:           spikes,
 		InvWalls:         invwalls,
 		NPCs:             npcs,
-		spriteManager:    spriteManager,
-		fontsManager:     fontsManager,
-		musicManager:     musicManager,
+		spriteManager:    resourceManager.Sprites,
+		fontsManager:     resourceManager.Fonts,
+		musicManager:     resourceManager.Music,
 		snapshotsDir:     config.SnapshotsDir,
 		playerSpawn:      playerPos,
 		Level:            config.Level,
@@ -349,8 +349,8 @@ func New(config Config, spriteManager *sprites.Manager, fontsManager *fonts.Mana
 	}, nil
 }
 
-func NewFromSnapshot(config Config, snapshot *Snapshot, spritesManager *sprites.Manager, fontsManager *fonts.Manager, musicManager *music.Manager, dialogProvider dialog.Provider) (*Engine, error) {
-	e, err := New(config, spritesManager, fontsManager, musicManager, dialogProvider)
+func NewFromSnapshot(config Config, snapshot *Snapshot, resourceManager *ResourceManager, dialogProvider dialog.Provider) (*Engine, error) {
+	e, err := New(config, resourceManager, dialogProvider)
 	if err != nil {
 		return nil, fmt.Errorf("creating engine: %w", err)
 	}

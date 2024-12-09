@@ -25,6 +25,7 @@ import (
 	"github.com/c4t-but-s4d/ctfcup-2024-igra/internal/logging"
 	"github.com/c4t-but-s4d/ctfcup-2024-igra/internal/server"
 	"github.com/c4t-but-s4d/ctfcup-2024-igra/internal/sprites"
+	"github.com/c4t-but-s4d/ctfcup-2024-igra/internal/tiles"
 	gameserverpb "github.com/c4t-but-s4d/ctfcup-2024-igra/proto/go/gameserver"
 )
 
@@ -39,11 +40,14 @@ func main() {
 	round := pflag.IntP("round", "r", 1, "game round")
 	pflag.Parse()
 
-	fntmng := fonts.NewManager()
-	smng := sprites.NewManager()
+	mng := &engine.ResourceManager{
+		Fonts:   fonts.NewManager(),
+		Tiles:   tiles.NewManager(),
+		Sprites: sprites.NewManager(),
+	}
 	dialogProvider := dialog.NewStandardProvider(false)
 
-	game := server.NewGame(*snapshotsDir, fntmng)
+	game := server.NewGame(*snapshotsDir, mng.Fonts)
 
 	gs := server.New(game, func() (*engine.Engine, error) {
 		files, err := os.ReadDir(*snapshotsDir)
@@ -72,14 +76,14 @@ func main() {
 				return nil, fmt.Errorf("reading snapshot file: %w", err)
 			}
 
-			e, err := engine.NewFromSnapshot(engineConfig, &engine.Snapshot{Data: data}, smng, fntmng, nil, dialogProvider)
+			e, err := engine.NewFromSnapshot(engineConfig, &engine.Snapshot{Data: data}, mng, dialogProvider)
 			if err != nil {
 				return nil, fmt.Errorf("creating engine from snapshot: %w", err)
 			}
 			return e, nil
 		}
 
-		e, err := engine.New(engineConfig, smng, fntmng, nil, dialogProvider)
+		e, err := engine.New(engineConfig, mng, dialogProvider)
 		if err != nil {
 			return nil, fmt.Errorf("creating engine without snapshot: %w", err)
 		}

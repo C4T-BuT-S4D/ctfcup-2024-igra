@@ -1,19 +1,20 @@
 package arcade
 
-type Screen struct {
-}
+const (
+	SIZE = 64
+)
 
-type Header struct {
-	Height int
-	Width  int
+type Screen struct {
+	Cells [SIZE][SIZE]uint8
 }
 
 type State struct {
-	Won  bool
-	Lose bool
+	Won    bool
+	Lose   bool
+	Screen Screen
 }
+
 type Arcade interface {
-	Header() Header
-	Feed(input string) error
+	Feed(input byte) error
 	State() State
 }
