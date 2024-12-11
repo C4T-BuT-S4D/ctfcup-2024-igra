@@ -1,0 +1,5 @@
+listen: "0.0.0.0:5555"
+teams:
+  - name: "Test"
+    snapshots_path:
+      - "/Users/jnovikov/ctfdev/ctfcup-2024-igra/snapshots"
