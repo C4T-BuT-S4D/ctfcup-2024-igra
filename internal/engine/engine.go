@@ -561,13 +561,15 @@ func (e *Engine) Draw(screen *ebiten.Image) {
 		face := e.fontsManager.Get(fonts.Dialog)
 
 		teamtxt := fmt.Sprintf("Team %s", e.TeamName)
-		text.Draw(screen, teamtxt, face, 72, 72, color.RGBA{R: 204, G: 14, B: 206, A: 255})
+		start := 72
+		step := 36
+		text.Draw(screen, teamtxt, face, start, start, color.RGBA{R: 204, G: 14, B: 206, A: 255})
 
 		txt := fmt.Sprintf("HP: %d", e.Player.Health)
-		text.Draw(screen, txt, face, 72, 72+36, color.RGBA{R: 0, G: 255, B: 0, A: 255})
+		text.Draw(screen, txt, face, start, start+step*1, color.RGBA{R: 0, G: 255, B: 0, A: 255})
 
 		tickTxt := fmt.Sprintf("Tick: %d", e.Tick)
-		text.Draw(screen, tickTxt, face, 72, 72+72, color.RGBA{R: 0, G: 255, B: 0, A: 255})
+		text.Draw(screen, tickTxt, face, start, start+step*2, color.RGBA{R: 0, G: 255, B: 0, A: 255})
 
 		for i, it := range e.Player.Inventory.Items {
 			op := &ebiten.DrawImageOptions{}
