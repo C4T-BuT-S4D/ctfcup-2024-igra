@@ -9,13 +9,13 @@ import (
 
 type Machine struct {
 	*object.Object
-	Arcade       Arcade        `msgpack:"-"`
+	Arcade       Game          `msgpack:"-"`
 	Image        *ebiten.Image `msgpack:"-"`
 	LinkedItem   *item.Item    `msgpack:"-"`
 	ProvidesItem string
 }
 
-func New(origin *geometry.Point, img *ebiten.Image, width, height float64, arcade Arcade, item string) *Machine {
+func New(origin *geometry.Point, img *ebiten.Image, width, height float64, arcade Game, item string) *Machine {
 	return &Machine{
 		Object: &object.Object{
 			Origin: origin,

@@ -41,7 +41,7 @@ func NewGame(ctx context.Context, client gameserverpb.GameServerServiceClient, l
 
 	mng := engine.NewResourceManager(true)
 
-	arcadeProvider := &arcade.StandardProvider{}
+	arcadeProvider := &arcade.LocalProvider{}
 
 	if client != nil {
 		eventStream, err := client.ProcessEvent(ctx)

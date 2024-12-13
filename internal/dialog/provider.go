@@ -10,17 +10,17 @@ type Provider interface {
 }
 
 type StandardProvider struct {
-	ShowInput bool
+	showInput bool
 }
 
 func NewStandardProvider(showInput bool) *StandardProvider {
 	return &StandardProvider{
-		ShowInput: showInput,
+		showInput: showInput,
 	}
 }
 
 func (sp *StandardProvider) DisplayInput() bool {
-	return sp.ShowInput
+	return sp.showInput
 }
 
 func (sp *StandardProvider) Get(id string) (Dialog, error) {
@@ -32,8 +32,7 @@ func (sp *StandardProvider) Get(id string) (Dialog, error) {
 	}
 }
 
-type ClientProvider struct {
-}
+type ClientProvider struct{}
 
 func (cp *ClientProvider) Get(_ string) (Dialog, error) {
 	return NewClientDialog(), nil

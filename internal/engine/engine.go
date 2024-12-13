@@ -12,6 +12,7 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"slices"
 	"strings"
 	"time"
 
@@ -22,7 +23,6 @@ import (
 	"github.com/lafriks/go-tiled"
 	"github.com/samber/lo"
 	"github.com/vmihailenco/msgpack/v5"
-	"golang.org/x/exp/slices"
 
 	"github.com/c4t-but-s4d/ctfcup-2024-igra/internal/camera"
 	"github.com/c4t-but-s4d/ctfcup-2024-igra/internal/damage"
@@ -311,19 +311,19 @@ func New(config Config, resourceManager *ResourceManager, dialogProvider dialog.
 	}
 
 	for _, n := range npcs {
-		_, i, ok := lo.FindIndexOf(items, func(i *item.Item) bool {
+		i := slices.IndexFunc(items, func(i *item.Item) bool {
 			return i.Name == n.ReturnsItem
 		})
-		if !ok {
+		if i < 0 {
 			return nil, fmt.Errorf("item %s not found for npc", n.ReturnsItem)
 		}
 		n.LinkedItem = items[i]
 	}
 	for _, arc := range arcades {
-		_, i, ok := lo.FindIndexOf(items, func(i *item.Item) bool {
+		i := slices.IndexFunc(items, func(i *item.Item) bool {
 			return i.Name == arc.ProvidesItem
 		})
-		if !ok {
+		if i < 0 {
 			return nil, fmt.Errorf("item %s not found for arcade", arc.ProvidesItem)
 		}
 		arc.LinkedItem = items[i]

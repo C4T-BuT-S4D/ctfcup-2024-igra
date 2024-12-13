@@ -41,7 +41,7 @@ func main() {
 
 	mng := engine.NewResourceManager(false)
 	dialogProvider := dialog.NewStandardProvider(false)
-	arcadeProvider := &arcade.StandardProvider{}
+	arcadeProvider := &arcade.LocalProvider{}
 
 	game := server.NewGame(*snapshotsDir, mng.Fonts)
 

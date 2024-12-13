@@ -3,13 +3,14 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/samber/lo"
-	"golang.org/x/exp/slices"
 	"net/http"
 	"os"
 	"path"
+	"slices"
 	"strings"
 	"time"
+
+	"github.com/samber/lo"
 
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/pflag"
