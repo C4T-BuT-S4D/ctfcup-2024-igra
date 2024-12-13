@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/c4t-but-s4d/ctfcup-2024-igra/internal/arcade"
 	"net/http"
 	"os"
 	"os/signal"
@@ -46,6 +47,7 @@ func main() {
 		Sprites: sprites.NewManager(),
 	}
 	dialogProvider := dialog.NewStandardProvider(false)
+	arcadeProvider := &arcade.StandardProvider{}
 
 	game := server.NewGame(*snapshotsDir, mng.Fonts)
 
@@ -76,14 +78,14 @@ func main() {
 				return nil, fmt.Errorf("reading snapshot file: %w", err)
 			}
 
-			e, err := engine.NewFromSnapshot(engineConfig, &engine.Snapshot{Data: data}, mng, dialogProvider)
+			e, err := engine.NewFromSnapshot(engineConfig, &engine.Snapshot{Data: data}, mng, dialogProvider, arcadeProvider)
 			if err != nil {
 				return nil, fmt.Errorf("creating engine from snapshot: %w", err)
 			}
 			return e, nil
 		}
 
-		e, err := engine.New(engineConfig, mng, dialogProvider)
+		e, err := engine.New(engineConfig, mng, dialogProvider, arcadeProvider)
 		if err != nil {
 			return nil, fmt.Errorf("creating engine without snapshot: %w", err)
 		}

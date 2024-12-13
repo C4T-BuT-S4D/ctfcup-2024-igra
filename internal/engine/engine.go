@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/c4t-but-s4d/ctfcup-2024-igra/internal/arcade"
 	"image/color"
 	"os"
 	"path"
@@ -123,7 +124,7 @@ func NewResourceManager() *ResourceManager {
 	}
 }
 
-func New(config Config, resourceManager *ResourceManager, dialogProvider dialog.Provider) (*Engine, error) {
+func New(config Config, resourceManager *ResourceManager, dialogProvider dialog.Provider, arcadeProvider arcade.Provider) (*Engine, error) {
 	mapFile, err := resources.EmbeddedFS.Open(fmt.Sprintf("levels/%s.tmx", config.Level))
 	if err != nil {
 		return nil, fmt.Errorf("failed to open map: %w", err)
@@ -201,10 +202,13 @@ func New(config Config, resourceManager *ResourceManager, dialogProvider dialog.
 		return nil, fmt.Errorf("creating player: %w", err)
 	}
 
-	var items []*item.Item
-	var spikes []*damage.Spike
-	var invwalls []*wall.InvWall
-	var npcs []*npc.NPC
+	var (
+		items    []*item.Item
+		spikes   []*damage.Spike
+		invwalls []*wall.InvWall
+		npcs     []*npc.NPC
+		arcades  []*arcade.Machine
+	)
 	winPoints := make(map[string]*geometry.Point)
 	portalsMap := make(map[string]*portal.Portal)
 
@@ -280,6 +284,23 @@ func New(config Config, resourceManager *ResourceManager, dialogProvider dialog.
 				))
 			case "boss-win":
 				winPoints[o.Name] = &geometry.Point{X: o.X, Y: o.Y}
+			case "arcade":
+				img := resourceManager.Sprites.GetSprite(sprites.Arcade)
+				arc, err := arcadeProvider.Get(o.Name)
+				if err != nil {
+					return nil, fmt.Errorf("getting '%s' arcade: %w", o.Name, err)
+				}
+				arcades = append(arcades, arcade.New(
+					&geometry.Point{
+						X: o.X,
+						Y: o.Y,
+					},
+					img,
+					o.Width,
+					o.Height,
+					arc,
+					o.Properties.GetString("item"),
+				))
 			}
 		}
 	}
@@ -292,6 +313,15 @@ func New(config Config, resourceManager *ResourceManager, dialogProvider dialog.
 			return nil, fmt.Errorf("item %s not found for npc", n.ReturnsItem)
 		}
 		n.LinkedItem = items[i]
+	}
+	for _, arc := range arcades {
+		_, i, ok := lo.FindIndexOf(items, func(i *item.Item) bool {
+			return i.Name == arc.ProvidesItem
+		})
+		if !ok {
+			return nil, fmt.Errorf("item %s not found for arcade", arc.ProvidesItem)
+		}
+		arc.LinkedItem = items[i]
 	}
 
 	for name, p := range portalsMap {
@@ -349,8 +379,8 @@ func New(config Config, resourceManager *ResourceManager, dialogProvider dialog.
 	}, nil
 }
 
-func NewFromSnapshot(config Config, snapshot *Snapshot, resourceManager *ResourceManager, dialogProvider dialog.Provider) (*Engine, error) {
-	e, err := New(config, resourceManager, dialogProvider)
+func NewFromSnapshot(config Config, snapshot *Snapshot, resourceManager *ResourceManager, dialogProvider dialog.Provider, arcadeProvider arcade.Provider) (*Engine, error) {
+	e, err := New(config, resourceManager, dialogProvider, arcadeProvider)
 	if err != nil {
 		return nil, fmt.Errorf("creating engine: %w", err)
 	}

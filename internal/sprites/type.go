@@ -9,4 +9,5 @@ const (
 	Bullet Type = "bullet"
 	HP     Type = "hp"
 	BG     Type = "bg"
+	Arcade Type = "arcade"
 )

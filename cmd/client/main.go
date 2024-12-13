@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/c4t-but-s4d/ctfcup-2024-igra/internal/arcade"
 	"os"
 	"os/signal"
 	"syscall"
@@ -41,6 +42,8 @@ func NewGame(ctx context.Context, client gameserverpb.GameServerServiceClient, l
 
 	mng := engine.NewResourceManager()
 
+	arcadeProvider := &arcade.StandardProvider{}
+
 	if client != nil {
 		eventStream, err := client.ProcessEvent(ctx)
 		if err != nil {
@@ -56,13 +59,13 @@ func NewGame(ctx context.Context, client gameserverpb.GameServerServiceClient, l
 		dialogProvider := &dialog.ClientProvider{}
 
 		if snapshotProto := startSnapshotEvent.GetSnapshot(); snapshotProto.Data == nil {
-			e, err := engine.New(engineConfig, mng, dialogProvider)
+			e, err := engine.New(engineConfig, mng, dialogProvider, arcadeProvider)
 			if err != nil {
 				return nil, fmt.Errorf("creating engine without snapshot: %w", err)
 			}
 			g.Engine = e
 		} else {
-			e, err := engine.NewFromSnapshot(engineConfig, engine.NewSnapshotFromProto(snapshotProto), mng, dialogProvider)
+			e, err := engine.NewFromSnapshot(engineConfig, engine.NewSnapshotFromProto(snapshotProto), mng, dialogProvider, arcadeProvider)
 			if err != nil {
 				return nil, fmt.Errorf("creating engine from snapshot: %w", err)
 			}
@@ -81,7 +84,7 @@ func NewGame(ctx context.Context, client gameserverpb.GameServerServiceClient, l
 			}
 		}()
 	} else {
-		e, err := engine.New(engineConfig, mng, dialog.NewStandardProvider(true))
+		e, err := engine.New(engineConfig, mng, dialog.NewStandardProvider(true), arcadeProvider)
 		if err != nil {
 			return nil, fmt.Errorf("initializing engine: %w", err)
 		}
