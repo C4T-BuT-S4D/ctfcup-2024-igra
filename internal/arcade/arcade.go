@@ -1,11 +1,15 @@
 package arcade
 
+import (
+	"image/color"
+)
+
 const (
 	SIZE = 64
 )
 
 type Screen struct {
-	Cells [SIZE][SIZE]uint8
+	Cells [SIZE][SIZE]color.Color
 }
 
 type State struct {
