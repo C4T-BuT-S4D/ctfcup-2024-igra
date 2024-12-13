@@ -39,7 +39,7 @@ func NewGame(ctx context.Context, client gameserverpb.GameServerServiceClient, l
 		Level: level,
 	}
 
-	mng := engine.NewResourceManager()
+	mng := engine.NewResourceManager(true)
 
 	arcadeProvider := &arcade.StandardProvider{}
 

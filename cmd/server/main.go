@@ -4,13 +4,14 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/c4t-but-s4d/ctfcup-2024-igra/internal/arcade"
 	"net/http"
 	"os"
 	"os/signal"
 	"path/filepath"
 	"strings"
 	"syscall"
+
+	"github.com/c4t-but-s4d/ctfcup-2024-igra/internal/arcade"
 
 	mu "github.com/c4t-but-s4d/cbs-go/multiproto"
 	"github.com/hajimehoshi/ebiten/v2"
@@ -21,12 +22,9 @@ import (
 
 	"github.com/c4t-but-s4d/ctfcup-2024-igra/internal/dialog"
 	"github.com/c4t-but-s4d/ctfcup-2024-igra/internal/engine"
-	"github.com/c4t-but-s4d/ctfcup-2024-igra/internal/fonts"
 	"github.com/c4t-but-s4d/ctfcup-2024-igra/internal/grpcauth"
 	"github.com/c4t-but-s4d/ctfcup-2024-igra/internal/logging"
 	"github.com/c4t-but-s4d/ctfcup-2024-igra/internal/server"
-	"github.com/c4t-but-s4d/ctfcup-2024-igra/internal/sprites"
-	"github.com/c4t-but-s4d/ctfcup-2024-igra/internal/tiles"
 	gameserverpb "github.com/c4t-but-s4d/ctfcup-2024-igra/proto/go/gameserver"
 )
 
@@ -41,11 +39,7 @@ func main() {
 	round := pflag.IntP("round", "r", 1, "game round")
 	pflag.Parse()
 
-	mng := &engine.ResourceManager{
-		Fonts:   fonts.NewManager(),
-		Tiles:   tiles.NewManager(),
-		Sprites: sprites.NewManager(),
-	}
+	mng := engine.NewResourceManager(false)
 	dialogProvider := dialog.NewStandardProvider(false)
 	arcadeProvider := &arcade.StandardProvider{}
 

@@ -1,11 +1,9 @@
 package fonts
 
 import (
+	"bytes"
 	"fmt"
 	"sync"
-
-	"golang.org/x/image/font"
-	"golang.org/x/image/font/opentype"
 
 	"github.com/c4t-but-s4d/ctfcup-2024-igra/internal/resources"
 	"github.com/hajimehoshi/ebiten/v2/text/v2"
@@ -35,26 +33,21 @@ func (m *Manager) Get(t Type) text.Face {
 		panic(err)
 	}
 
-	ff, err := opentype.Parse(f)
+	source, err := text.NewGoTextFaceSource(bytes.NewReader(f))
 	if err != nil {
 		panic(err)
 	}
 
-	opts := &opentype.FaceOptions{
-		Size:    72,
-		DPI:     72,
-		Hinting: font.HintingFull,
+	face := &text.GoTextFace{
+		Source:    source,
+		Direction: text.DirectionLeftToRight,
+		Size:      72,
 	}
+
 	if t == Dialog {
-		opts.Size = 24
-	}
-	face, err := opentype.NewFace(ff, opts)
-	if err != nil {
-		panic(err)
+		face.Size = 24
 	}
 
-	xface := text.NewGoXFace(face)
-
-	m.cache[t] = xface
-	return xface
+	m.cache[t] = face
+	return face
 }

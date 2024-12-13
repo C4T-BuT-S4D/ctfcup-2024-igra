@@ -116,13 +116,18 @@ type ResourceManager struct {
 	Music   *music.Manager
 }
 
-func NewResourceManager() *ResourceManager {
-	return &ResourceManager{
+func NewResourceManager(withMusic bool) *ResourceManager {
+	rm := &ResourceManager{
 		Sprites: sprites.NewManager(),
 		Tiles:   tiles.NewManager(),
 		Fonts:   fonts.NewManager(),
-		Music:   music.NewManager(),
 	}
+
+	if withMusic {
+		rm.Music = music.NewManager()
+	}
+
+	return rm
 }
 
 func New(config Config, resourceManager *ResourceManager, dialogProvider dialog.Provider, arcadeProvider arcade.Provider) (*Engine, error) {
