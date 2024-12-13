@@ -3,6 +3,8 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/samber/lo"
+	"golang.org/x/exp/slices"
 	"net/http"
 	"os"
 	"path"
@@ -18,29 +20,37 @@ import (
 )
 
 type Item struct {
-	Name      string `json:"name"`
-	Collected bool   `json:"collected"`
+	Name        string    `json:"name"`
+	Collected   bool      `json:"collected"`
+	CollectedAt time.Time `json:"collectedAt,omitempty"`
 }
 
 type LevelScore struct {
-	Level          string `json:"level"`
-	CollectedItems []Item `json:"items"`
+	Level string `json:"level"`
+	Items []Item `json:"items"`
 }
 
 type TeamScore struct {
-	Name      string       `json:"name"`
-	Score     int          `json:"score"`
-	UpdatedAt time.Time    `json:"updatedAt"`
-	Levels    []LevelScore `json:"levels"`
+	Name      string        `json:"name"`
+	Score     int           `json:"score"`
+	TotalTime time.Duration `json:"totalTime"`
+	UpdatedAt time.Time     `json:"updatedAt"`
+	Levels    []LevelScore  `json:"levels"`
 }
 
 type Team struct {
 	Name          string   `mapstructure:"name"`
 	SnapshotsPath []string `mapstructure:"snapshots_path"`
 }
+type Round struct {
+	Level string `mapstructure:"level"`
+	Start string `mapstructure:"start"`
+	start time.Time
+}
 type Config struct {
-	Listen string `mapstructure:"listen"`
-	Teams  []Team `mapstructure:"teams"`
+	Listen string  `mapstructure:"listen"`
+	Teams  []Team  `mapstructure:"teams"`
+	Rounds []Round `mapstructure:"rounds"`
 }
 
 func readConfig(configPath string) (*Config, error) {
@@ -54,6 +64,14 @@ func readConfig(configPath string) (*Config, error) {
 	var cfg Config
 	if err := viper.Unmarshal(&cfg); err != nil {
 		return nil, fmt.Errorf("parsing config: %w", err)
+	}
+
+	for _, round := range cfg.Rounds {
+		t, err := time.Parse("2006-01-02T15:04:05", round.Start)
+		if err != nil {
+			return nil, fmt.Errorf("parsing round start time: %w", err)
+		}
+		round.start = t
 	}
 
 	return &cfg, nil
@@ -70,25 +88,43 @@ func getScoreboard(cfg *Config) ([]TeamScore, error) {
 	for _, team := range cfg.Teams {
 		var teamScore TeamScore
 		teamScore.Name = team.Name
-		latestSnapshotByLevel := make(map[string]snapshot)
 
+		var teamSnapshots []string
 		for _, snapshotPath := range team.SnapshotsPath {
 			files, err := os.ReadDir(snapshotPath)
 			if err != nil {
 				return nil, fmt.Errorf("listing snapshots directory: %w", err)
 			}
-
 			for _, f := range files {
 				if !f.Type().IsRegular() || !strings.HasPrefix(f.Name(), "snapshot") {
 					continue
 				}
+				teamSnapshots = append(teamSnapshots, path.Join(snapshotPath, f.Name()))
+			}
+		}
 
-				parts := strings.Split(f.Name(), "_")
+		var (
+			totalScore  int
+			lastUpdated time.Time
+			totalTime   time.Duration
+		)
+
+		for _, round := range cfg.Rounds {
+			levelSnapshots := lo.Filter(teamSnapshots, func(snapshot string, _ int) bool {
+				return strings.Contains(snapshot, round.Level)
+			})
+			slices.Sort(levelSnapshots)
+			if len(levelSnapshots) == 0 {
+				continue
+			}
+
+			collectedAt := make(map[string]time.Time)
+
+			for _, sp := range levelSnapshots {
+				parts := strings.Split(path.Base(sp), "_")
 				if len(parts) != 3 {
-					return nil, fmt.Errorf("invalid snapshot filename: %s", f.Name())
+					return nil, fmt.Errorf("invalid snapshot filename: %s", sp)
 				}
-
-				level := parts[1]
 				dt := parts[2]
 
 				t, err := time.Parse("2006-01-02T15:04:05.999999999", dt)
@@ -96,63 +132,70 @@ func getScoreboard(cfg *Config) ([]TeamScore, error) {
 					return nil, fmt.Errorf("parsing snapshot time: %w", err)
 				}
 
-				if s, ok := latestSnapshotByLevel[level]; ok && t.Before(s.time) {
-					continue
+				var e engine.Engine
+				f, err := os.Open(sp)
+				if err != nil {
+					return nil, fmt.Errorf("reading snapshot file: %w", err)
 				}
 
-				latestSnapshotByLevel[level] = snapshot{
-					path:  path.Join(snapshotPath, f.Name()),
-					time:  t,
-					level: level,
+				if err := json.NewDecoder(f).Decode(&e); err != nil {
+					return nil, fmt.Errorf("decoding snapshot: %w", err)
+				}
+
+				for _, it := range e.Items {
+					if !it.Important {
+						continue
+					}
+					if _, ok := collectedAt[it.Name]; !ok {
+						// Still show not collected items later.
+						collectedAt[it.Name] = time.Time{}
+					}
+					// Only update collectedAt if it was not collected before.
+					if it.Collected && collectedAt[it.Name].IsZero() {
+						collectedAt[it.Name] = t
+					}
 				}
 			}
-		}
 
-		var (
-			totalScore  int
-			lastUpdated time.Time
-		)
+			var (
+				lastCollectedAt time.Time
+				levelScore      LevelScore
+			)
 
-		for _, s := range latestSnapshotByLevel {
-			var e engine.Engine
-			f, err := os.Open(s.path)
-			if err != nil {
-				return nil, fmt.Errorf("reading snapshot file: %w", err)
-			}
-
-			if err := json.NewDecoder(f).Decode(&e); err != nil {
-				return nil, fmt.Errorf("decoding snapshot: %w", err)
-			}
-
-			levelScore := LevelScore{
-				Level: s.level,
-			}
-
-			for _, it := range e.Items {
-				if !it.Important {
-					continue
-				}
-				levelScore.CollectedItems = append(levelScore.CollectedItems, Item{
-					Name:      it.Name,
-					Collected: it.Collected,
+			for item, ct := range collectedAt {
+				levelScore.Items = append(levelScore.Items, Item{
+					Name:        item,
+					Collected:   !ct.IsZero(),
+					CollectedAt: ct,
 				})
-
-				if it.Collected {
-					totalScore++
+				if !ct.IsZero() {
+					totalScore += 1
+				}
+				if ct.After(lastCollectedAt) {
+					lastCollectedAt = ct
 				}
 			}
 
-			if lastUpdated.Before(s.time) {
-				lastUpdated = s.time
-			}
-
+			levelScore.Level = round.Level
 			teamScore.Levels = append(teamScore.Levels, levelScore)
+			totalTime += lastCollectedAt.Sub(round.start)
+			if lastCollectedAt.After(lastUpdated) {
+				lastUpdated = lastCollectedAt
+			}
 		}
 
+		teamScore.TotalTime = totalTime
 		teamScore.Score = totalScore
 		teamScore.UpdatedAt = lastUpdated
 		scores = append(scores, teamScore)
 	}
+
+	slices.SortFunc(scores, func(a, b TeamScore) int {
+		if a.Score == b.Score {
+			return int(a.TotalTime.Milliseconds() - b.TotalTime.Milliseconds())
+		}
+		return b.Score - a.Score
+	})
 	return scores, nil
 }
 

@@ -3,3 +3,6 @@ teams:
   - name: "Test"
     snapshots_path:
       - "/Users/jnovikov/ctfdev/ctfcup-2024-igra/snapshots"
+rounds:
+  - level: "test"
+    start: "2024-12-13T00:00:00"
