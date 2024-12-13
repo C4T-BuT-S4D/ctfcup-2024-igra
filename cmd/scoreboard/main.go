@@ -66,12 +66,12 @@ func readConfig(configPath string) (*Config, error) {
 		return nil, fmt.Errorf("parsing config: %w", err)
 	}
 
-	for _, round := range cfg.Rounds {
+	for i, round := range cfg.Rounds {
 		t, err := time.Parse("2006-01-02T15:04:05", round.Start)
 		if err != nil {
 			return nil, fmt.Errorf("parsing round start time: %w", err)
 		}
-		round.start = t
+		cfg.Rounds[i].start = t
 	}
 
 	return &cfg, nil
