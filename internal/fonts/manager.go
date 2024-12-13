@@ -8,20 +8,21 @@ import (
 	"golang.org/x/image/font/opentype"
 
 	"github.com/c4t-but-s4d/ctfcup-2024-igra/internal/resources"
+	"github.com/hajimehoshi/ebiten/v2/text/v2"
 )
 
 type Manager struct {
-	cache map[Type]font.Face
+	cache map[Type]text.Face
 	m     sync.Mutex
 }
 
 func NewManager() *Manager {
 	return &Manager{
-		cache: make(map[Type]font.Face),
+		cache: make(map[Type]text.Face),
 	}
 }
 
-func (m *Manager) Get(t Type) font.Face {
+func (m *Manager) Get(t Type) text.Face {
 	m.m.Lock()
 	defer m.m.Unlock()
 
@@ -52,6 +53,8 @@ func (m *Manager) Get(t Type) font.Face {
 		panic(err)
 	}
 
-	m.cache[t] = face
-	return face
+	xface := text.NewGoXFace(face)
+
+	m.cache[t] = xface
+	return xface
 }

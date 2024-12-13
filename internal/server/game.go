@@ -9,9 +9,8 @@ import (
 	"sync"
 
 	"github.com/hajimehoshi/ebiten/v2"
-	"github.com/hajimehoshi/ebiten/v2/text"
+	"github.com/hajimehoshi/ebiten/v2/text/v2"
 	"github.com/sirupsen/logrus"
-	"golang.org/x/image/font"
 
 	"github.com/c4t-but-s4d/ctfcup-2024-igra/internal/camera"
 	"github.com/c4t-but-s4d/ctfcup-2024-igra/internal/engine"
@@ -119,9 +118,12 @@ func (g *Game) Draw(screen *ebiten.Image) {
 		}
 
 		txt := fmt.Sprintf("Team %s: %s", team, action)
-		width := font.MeasureString(face, txt)
+		width, _ := text.Measure(txt, face, 0)
 
-		text.Draw(screen, txt, face, camera.WIDTH/2-width.Floor()/2, camera.HEIGHT/2, c)
+		textOp := &text.DrawOptions{}
+		textOp.GeoM.Translate(camera.WIDTH/2-width/2, camera.HEIGHT/2)
+		textOp.ColorScale.ScaleWithColor(c)
+		text.Draw(screen, txt, face, textOp)
 	}
 }
 

@@ -4,10 +4,11 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/c4t-but-s4d/ctfcup-2024-igra/internal/arcade"
 	"os"
 	"os/signal"
 	"syscall"
+
+	"github.com/c4t-but-s4d/ctfcup-2024-igra/internal/arcade"
 
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/sirupsen/logrus"
@@ -23,8 +24,6 @@ import (
 	"github.com/c4t-but-s4d/ctfcup-2024-igra/internal/logging"
 	gameserverpb "github.com/c4t-but-s4d/ctfcup-2024-igra/proto/go/gameserver"
 )
-
-var ErrNoStartSnapshot = errors.New("no start snapshot")
 
 func NewGame(ctx context.Context, client gameserverpb.GameServerServiceClient, level string) (*Game, error) {
 	g := &Game{
@@ -200,7 +199,7 @@ func main() {
 		logrus.Fatalf("Failed to create game: %v", err)
 	}
 
-	//ebiten.SetTPS(5)
+	// ebiten.SetTPS(5)
 	ebiten.SetWindowTitle("ctfcup-2024-igra client")
 	ebiten.SetWindowResizingMode(ebiten.WindowResizingModeEnabled)
 

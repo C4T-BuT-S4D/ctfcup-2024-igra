@@ -7,21 +7,22 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/c4t-but-s4d/ctfcup-2024-igra/internal/arcade"
 	"image/color"
+	"math"
 	"os"
 	"path"
 	"path/filepath"
 	"strings"
 	"time"
 
+	"github.com/c4t-but-s4d/ctfcup-2024-igra/internal/arcade"
+
 	"github.com/hajimehoshi/ebiten/v2"
-	"github.com/hajimehoshi/ebiten/v2/text"
+	"github.com/hajimehoshi/ebiten/v2/text/v2"
 	"github.com/lafriks/go-tiled"
 	"github.com/samber/lo"
 	"github.com/vmihailenco/msgpack/v5"
 	"golang.org/x/exp/slices"
-	"golang.org/x/image/font"
 
 	"github.com/c4t-but-s4d/ctfcup-2024-igra/internal/camera"
 	"github.com/c4t-but-s4d/ctfcup-2024-igra/internal/damage"
@@ -170,7 +171,6 @@ func New(config Config, resourceManager *ResourceManager, dialogProvider dialog.
 				)
 			}
 		}
-
 	}
 
 	var bgImages []*tiles.BackgroundImage
@@ -454,18 +454,24 @@ func (e *Engine) drawDiedScreen(screen *ebiten.Image) {
 	face := e.fontsManager.Get(fonts.DSouls)
 	redColor := color.RGBA{R: 255, G: 0, B: 0, A: 255}
 
-	width := font.MeasureString(face, "YOU DIED")
+	width, _ := text.Measure("YOU DIED", face, 0)
 
-	text.Draw(screen, "YOU DIED", face, camera.WIDTH/2-width.Floor()/2, camera.HEIGHT/2, redColor)
+	textOp := &text.DrawOptions{}
+	textOp.GeoM.Translate(camera.WIDTH/2-width/2, camera.HEIGHT/2)
+	textOp.ColorScale.ScaleWithColor(redColor)
+	text.Draw(screen, "YOU DIED", face, textOp)
 }
 
 func (e *Engine) drawYouWinScreen(screen *ebiten.Image) {
 	face := e.fontsManager.Get(fonts.DSouls)
 	gColor := color.RGBA{R: 0, G: 255, B: 0, A: 255}
 
-	width := font.MeasureString(face, "YOU WIN")
+	width, _ := text.Measure("YOU WIN", face, 0)
 
-	text.Draw(screen, "YOU WIN", face, camera.WIDTH/2-width.Floor()/2, camera.HEIGHT/2, gColor)
+	textOp := &text.DrawOptions{}
+	textOp.GeoM.Translate(camera.WIDTH/2-width/2, camera.HEIGHT/2)
+	textOp.ColorScale.ScaleWithColor(gColor)
+	text.Draw(screen, "YOU WIN", face, textOp)
 }
 
 func (e *Engine) drawNPCDialog(screen *ebiten.Image) {
@@ -505,18 +511,24 @@ func (e *Engine) drawNPCDialog(screen *ebiten.Image) {
 	r := min(e.dialogControl.scroll+dialogShowLines, len(lines))
 
 	visibleLines := lines[l:r]
-	text.Draw(screen, strings.Join(visibleLines, "\n"), face, int(dtx), int(dty), colorWhite)
+	textOp := &text.DrawOptions{}
+	textOp.GeoM.Translate(dtx, dty)
+	textOp.ColorScale.ScaleWithColor(colorWhite)
+	text.Draw(screen, strings.Join(visibleLines, "\n"), face, textOp)
 
 	// Draw dialog input buffer.
 	if len(e.dialogControl.inputBuffer) > 0 {
-		dtbx, dtby := dtx, dty+float64((len(visibleLines)-1)*face.Metrics().Height.Floor())+1.0*float64(face.Metrics().Height.Floor())
-		c := color.RGBA{R: 0x00, G: 0xff, B: 0xff, A: 0xff}
+		dtbx, dtby := dtx, dty+float64(len(visibleLines))*math.Floor(face.Metrics().HLineGap)
 		ibuf := string(e.dialogControl.inputBuffer)
 		if e.dialogControl.maskInput {
 			ibuf = strings.Repeat("*", len(ibuf))
 		}
 		x := input.AutoWrap(ibuf, face, ibw-camera.WIDTH/32)
-		text.Draw(screen, strings.Join(x, "\n"), face, int(dtbx), int(dtby), c)
+
+		textOp := &text.DrawOptions{}
+		textOp.GeoM.Translate(dtbx, dtby)
+		textOp.ColorScale.ScaleWithColor(color.RGBA{R: 0x00, G: 0xff, B: 0xff, A: 0xff})
+		text.Draw(screen, strings.Join(x, "\n"), face, textOp)
 	}
 }
 
@@ -591,15 +603,24 @@ func (e *Engine) Draw(screen *ebiten.Image) {
 		face := e.fontsManager.Get(fonts.Dialog)
 
 		teamtxt := fmt.Sprintf("Team %s", e.TeamName)
-		start := 72
-		step := 36
-		text.Draw(screen, teamtxt, face, start, start, color.RGBA{R: 204, G: 14, B: 206, A: 255})
+		start := float64(72)
+		step := float64(36)
+		textOp := &text.DrawOptions{}
+		textOp.GeoM.Translate(start, start)
+		textOp.ColorScale.ScaleWithColor(color.RGBA{R: 204, G: 14, B: 206, A: 255})
+		text.Draw(screen, teamtxt, face, textOp)
 
 		txt := fmt.Sprintf("HP: %d", e.Player.Health)
-		text.Draw(screen, txt, face, start, start+step*1, color.RGBA{R: 0, G: 255, B: 0, A: 255})
+		textOp = &text.DrawOptions{}
+		textOp.GeoM.Translate(start, start+step*1)
+		textOp.ColorScale.ScaleWithColor(color.RGBA{R: 0, G: 255, B: 0, A: 255})
+		text.Draw(screen, txt, face, textOp)
 
 		tickTxt := fmt.Sprintf("Tick: %d", e.Tick)
-		text.Draw(screen, tickTxt, face, start, start+step*2, color.RGBA{R: 0, G: 255, B: 0, A: 255})
+		textOp = &text.DrawOptions{}
+		textOp.GeoM.Translate(start, start+step*2)
+		textOp.ColorScale.ScaleWithColor(color.RGBA{R: 0, G: 255, B: 0, A: 255})
+		text.Draw(screen, tickTxt, face, textOp)
 
 		for i, it := range e.Player.Inventory.Items {
 			op := &ebiten.DrawImageOptions{}
