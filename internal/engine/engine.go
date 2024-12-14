@@ -526,32 +526,24 @@ func (e *Engine) drawNPCDialog(screen *ebiten.Image) {
 
 	// Draw dialog border (outer rectangle).
 	borderw, borderh := camera.WIDTH-camera.WIDTH/8, camera.HEIGHT/2
-	img := ebiten.NewImage(borderw, borderh)
-	img.Fill(color.White)
-	op := &ebiten.DrawImageOptions{}
-	bx, by := camera.WIDTH/16.0, camera.HEIGHT/2.0-camera.HEIGHT/16
-	op.GeoM.Translate(bx, by)
-	screen.DrawImage(img, op)
+	bx, by := float32(camera.WIDTH/16.0), float32(camera.HEIGHT/2.0-camera.HEIGHT/16)
+	vector.DrawFilledRect(screen, bx, by, float32(borderw), float32(borderh), color.White, false)
 
 	// Draw dialog border (inner rectangle).
 	ibw, ibh := borderw-camera.WIDTH/32, borderh-camera.HEIGHT/32
 	ibx, iby := bx+camera.WIDTH/64, by+camera.HEIGHT/64
-	img = ebiten.NewImage(ibw, ibh)
-	img.Fill(color.Black)
-	op = &ebiten.DrawImageOptions{}
-	op.GeoM.Translate(ibx, iby)
-	screen.DrawImage(img, op)
+	vector.DrawFilledRect(screen, ibx, iby, float32(ibw), float32(ibh), color.Black, false)
 
 	// Draw dialog NPC image.
-	op = &ebiten.DrawImageOptions{}
+	op := &ebiten.DrawImageOptions{}
 	op.GeoM.Translate(camera.WIDTH/2+camera.WIDTH/8, camera.HEIGHT/2)
 	screen.DrawImage(e.activeNPC.DialogImage, op)
 
 	// Draw dialog text.
-	dtx, dty := ibx+camera.WIDTH/32, iby+camera.HEIGHT/32
+	dtx, dty := float64(ibx+camera.WIDTH/32), float64(iby+camera.HEIGHT/32)
 	face := e.fontsManager.Get(fonts.Dialog)
 	faceMetrics := face.Metrics()
-	lineHeight := (faceMetrics.HAscent + faceMetrics.HDescent)
+	lineHeight := faceMetrics.HAscent + faceMetrics.HDescent
 	txt := e.activeNPC.Dialog.State().Text
 
 	lines := input.AutoWrap(txt, face, ibw-camera.WIDTH/32)
