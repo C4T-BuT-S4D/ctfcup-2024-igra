@@ -117,8 +117,10 @@ func New(config Config, resourceBundle *resources.Bundle, dialogProvider dialog.
 	}
 
 	var mapTiles []*tiles.StaticTile
+	var backgroundTiles []*tiles.BackgroundImage
 
 	for _, l := range tmap.Layers {
+		collisions := l.Properties.GetBool("collisions")
 		for x := 0; x < tmap.Width; x++ {
 			for y := 0; y < tmap.Height; y++ {
 				dt := l.Tiles[y*tmap.Width+x]
@@ -136,18 +138,21 @@ func New(config Config, resourceBundle *resources.Bundle, dialogProvider dialog.
 				tileImage := tilesImage.SubImage(spriteRect).(*ebiten.Image)
 
 				w, h := tmap.TileWidth, tmap.TileHeight
-				mapTiles = append(
-					mapTiles,
-					tiles.NewStaticTile(
-						&geometry.Point{
-							X: float64(x * w),
-							Y: float64(y * h),
-						},
-						w,
-						h,
-						tileImage,
-					),
+				tile := tiles.NewStaticTile(
+					&geometry.Point{
+						X: float64(x * w),
+						Y: float64(y * h),
+					},
+					w,
+					h,
+					tileImage,
 				)
+
+				if collisions {
+					mapTiles = append(mapTiles, tile)
+				} else {
+					backgroundTiles = append(backgroundTiles, &tiles.BackgroundImage{StaticTile: *tile})
+				}
 			}
 		}
 	}
@@ -328,7 +333,7 @@ func New(config Config, resourceBundle *resources.Bundle, dialogProvider dialog.
 
 	return &Engine{
 		Tiles:            mapTiles,
-		BackgroundImages: bgImages,
+		BackgroundImages: slices.Concat(bgImages, backgroundTiles),
 		Camera:           cam,
 		Player:           p,
 		Items:            items,
