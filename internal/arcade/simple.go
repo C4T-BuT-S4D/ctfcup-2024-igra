@@ -9,8 +9,8 @@ type cell int
 
 const (
 	empty  cell = iota
-	player      = iota
 	enemy       = iota
+	player      = iota
 	finish      = iota
 )
 
@@ -24,15 +24,22 @@ const (
 	right
 )
 
+type coord struct {
+	x, y int
+}
+
 func newSimpleGame() *Simple {
 	var s Simple
 	return &s
 }
 
 type Simple struct {
-	state [ScreenSize][ScreenSize]cell
-	lost  bool
-	won   bool
+	state     [ScreenSize][ScreenSize]cell
+	nextState [ScreenSize][ScreenSize]cell
+	lost      bool
+	won       bool
+	finish    coord
+	player    coord
 }
 
 func (s *Simple) Start() error {
@@ -45,72 +52,66 @@ func (s *Simple) Stop() error {
 }
 
 func (s *Simple) Feed(keys []ebiten.Key) error {
-	var m move
-	if len(keys) == 0 {
-		m = nop
-	} else {
-		m = s.toMove(keys[0])
+	for row := 0; row < ScreenSize; row++ {
+		for col := 0; col < ScreenSize; col++ {
+			if s.state[row][col] == enemy {
+				// move enemy
+				s.nextState[row][col] = empty
+				if row != ScreenSize-1 {
+					s.nextState[row+1][col] = enemy
+				}
+			}
+		}
 	}
-	s.step(m)
+
+	x, y := s.player.x, s.player.y
+	for _, key := range keys {
+		m := s.toMove(key)
+		switch m {
+		case up:
+			y--
+		case down:
+			y++
+		case left:
+			x--
+		case right:
+			x++
+		default:
+			// nop
+		}
+	}
+	x = max(0, min(ScreenSize-1, x))
+	y = max(0, min(ScreenSize-1, y))
+
+	if s.nextState[y][x] == enemy {
+		s.lost = true
+	}
+	if s.finish == s.player {
+		s.won = true
+	}
+	s.nextState[s.player.y][s.player.x] = empty
+	s.player = coord{x, y}
+	s.nextState[s.player.y][s.player.x] = player
+	s.nextState[s.finish.y][s.finish.x] = finish
+	s.state = s.nextState
 	return nil
 }
 
 func (s *Simple) reset() {
+	s.won = false
+	s.lost = false
 	// empty the state.
 	s.state = [ScreenSize][ScreenSize]cell{}
 	for i := 0; i < ScreenSize; i += 2 {
 		s.state[0][i] = enemy
 	}
 	for i := 1; i < ScreenSize; i += 2 {
-		s.state[1][i] = enemy
+		s.state[2][i] = enemy
 	}
 
-	s.state[ScreenSize/2][ScreenSize-1] = finish
-	s.state[ScreenSize/4][0] = player
-}
-
-func (s *Simple) step(m move) {
-	for row := ScreenSize - 1; row >= 0; row-- {
-		for col := 0; col < ScreenSize; col++ {
-			switch s.state[row][col] {
-			case enemy:
-				// move enemy
-				s.state[row][col] = empty
-				if row != ScreenSize-1 {
-					if s.state[row+1][col] == player {
-						s.lost = true
-					}
-					s.state[row+1][col] = enemy
-				}
-			case player:
-				// move player
-				x, y := col, row
-				switch m {
-				case up:
-					y--
-				case down:
-					y++
-				case left:
-					x--
-				case right:
-					x++
-				default:
-					// nop
-				}
-				x = max(0, min(ScreenSize-1, x))
-				y = max(0, min(ScreenSize-1, y))
-				if s.state[y][x] == enemy {
-					s.lost = true
-				}
-				if s.state[y][x] == finish {
-					s.won = true
-				}
-				s.state[row][col], s.state[y][x] = empty, player
-			default:
-				// nop
-			}
-		}
-	}
+	s.player = coord{0, ScreenSize / 2}
+	s.finish = coord{ScreenSize - 1, ScreenSize / 4}
+	s.nextState = s.state
 }
 
 func (s *Simple) toMove(key ebiten.Key) move {

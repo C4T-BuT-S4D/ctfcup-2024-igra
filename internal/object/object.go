@@ -16,6 +16,7 @@ const (
 	BossV2
 	EnemyBullet
 	BackgroundImage
+	Arcade
 )
 
 func (t Type) String() string {

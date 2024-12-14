@@ -108,6 +108,10 @@ func (i *Input) JustPressedKeys() []ebiten.Key {
 	return lo.Uniq(lo.Keys(i.newlyPressedKeys))
 }
 
+func (i *Input) PressedKeys() []ebiten.Key {
+	return lo.Uniq(lo.Keys(i.pressedKeys))
+}
+
 func (i *Input) ToProto() *gameserverpb.ClientEvent_KeysPressed {
 	return &gameserverpb.ClientEvent_KeysPressed{
 		KeysPressed: lo.Map(lo.Keys(i.pressedKeys), func(key ebiten.Key, _ int) int32 {

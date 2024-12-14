@@ -15,6 +15,10 @@ type Machine struct {
 	ProvidesItem string
 }
 
+func (m Machine) Type() object.Type {
+	return object.Arcade
+}
+
 func New(origin *geometry.Point, img *ebiten.Image, width, height float64, game Game, item string) *Machine {
 	return &Machine{
 		Object: &object.Object{

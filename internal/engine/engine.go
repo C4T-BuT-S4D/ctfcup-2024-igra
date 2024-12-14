@@ -16,15 +16,16 @@ import (
 	"strings"
 	"time"
 
-	"github.com/c4t-but-s4d/ctfcup-2024-igra/internal/arcade"
-
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/text/v2"
+	"github.com/hajimehoshi/ebiten/v2/vector"
 	"github.com/lafriks/go-tiled"
 	"github.com/samber/lo"
 	"github.com/vmihailenco/msgpack/v5"
 
+	"github.com/c4t-but-s4d/ctfcup-2024-igra/internal/arcade"
 	"github.com/c4t-but-s4d/ctfcup-2024-igra/internal/camera"
+	"github.com/c4t-but-s4d/ctfcup-2024-igra/internal/colors"
 	"github.com/c4t-but-s4d/ctfcup-2024-igra/internal/damage"
 	"github.com/c4t-but-s4d/ctfcup-2024-igra/internal/dialog"
 	"github.com/c4t-but-s4d/ctfcup-2024-igra/internal/fonts"
@@ -71,6 +72,7 @@ type Engine struct {
 	Spikes           []*damage.Spike          `json:"-" msgpack:"spikes"`
 	InvWalls         []*wall.InvWall          `json:"-" msgpack:"invWalls"`
 	NPCs             []*npc.NPC               `json:"-" msgpack:"npcs"`
+	Arcades          []*arcade.Machine        `json:"-" msgpack:"arcades"`
 	EnemyBullets     []*damage.Bullet         `json:"-" msgpack:"enemyBullets"`
 	BackgroundImages []*tiles.BackgroundImage `json:"-" msgpack:"backgroundImages"`
 
@@ -82,6 +84,7 @@ type Engine struct {
 	snapshotsDir  string
 	playerSpawn   *geometry.Point
 	activeNPC     *npc.NPC
+	activeArcade  *arcade.Machine
 	dialogControl dialogControl
 
 	Muted    bool   `json:"-" msgpack:"-"`
@@ -371,6 +374,7 @@ func New(config Config, resourceManager *ResourceManager, dialogProvider dialog.
 		Spikes:           spikes,
 		InvWalls:         invwalls,
 		NPCs:             npcs,
+		Arcades:          arcades,
 		spriteManager:    resourceManager.Sprites,
 		fontsManager:     resourceManager.Fonts,
 		musicManager:     resourceManager.Music,
@@ -426,6 +430,7 @@ func (e *Engine) Reset() {
 	e.Player.MoveTo(e.playerSpawn)
 	e.Player.Health = player.DefaultHealth
 	e.activeNPC = nil
+	e.activeArcade = nil
 	e.EnemyBullets = nil
 	e.Tick = 0
 }
@@ -479,12 +484,51 @@ func (e *Engine) drawYouWinScreen(screen *ebiten.Image) {
 	text.Draw(screen, "YOU WIN", face, textOp)
 }
 
+func (e *Engine) drawArcadeState(screen *ebiten.Image) {
+	as := e.activeArcade.Game.State()
+
+	borderSizePx := 10
+	cameraRectSide := min(camera.WIDTH, camera.HEIGHT)
+	cameraInnerRectSide := cameraRectSide - borderSizePx*2
+
+	scaleFactor := cameraInnerRectSide / arcade.ScreenSize
+
+	mgx, mgy := float32((camera.WIDTH-cameraRectSide)/2), float32((camera.HEIGHT-cameraRectSide)/2)
+	borderSizeF := float32(borderSizePx)
+	vector.DrawFilledRect(screen, mgx, mgy, float32(cameraRectSide), float32(cameraRectSide), color.White, false)
+	vector.DrawFilledRect(screen, mgx+borderSizeF, mgy+borderSizeF, float32(cameraInnerRectSide), float32(cameraInnerRectSide), color.Black, false)
+
+	for i := 0; i < len(as.Screen); i++ {
+		for j := 0; j < len(as.Screen[i]); j++ {
+			dy := float32(i * scaleFactor)
+			dx := float32(j * scaleFactor)
+			vector.DrawFilledRect(screen, mgx+dx+borderSizeF, mgy+dy+borderSizeF, float32(scaleFactor), float32(scaleFactor), as.Screen[i][j], false)
+		}
+	}
+
+	if as.Result == arcade.ResultUnknown {
+		return
+	}
+
+	txt, txtC := "TRY AGAIN", colors.Red
+	if as.Result == arcade.ResultWon {
+		txt, txtC = "YOU WIN. PRESS ESC TO CONTINUE", colors.Green
+	}
+
+	face := e.fontsManager.Get(fonts.DSouls)
+	width, _ := text.Measure(txt, face, 0)
+	textOp := &text.DrawOptions{}
+	textOp.GeoM.Translate(camera.WIDTH/2-width/2, camera.HEIGHT/2)
+	textOp.ColorScale.ScaleWithColor(txtC)
+	text.Draw(screen, txt, face, textOp)
+}
+
 func (e *Engine) drawNPCDialog(screen *ebiten.Image) {
-	colorWhite := color.RGBA{R: 0xff, G: 0xff, B: 0xff, A: 0xff}
+
 	// Draw dialog border (outer rectangle).
 	borderw, borderh := camera.WIDTH-camera.WIDTH/8, camera.HEIGHT/2
 	img := ebiten.NewImage(borderw, borderh)
-	img.Fill(colorWhite)
+	img.Fill(color.White)
 	op := &ebiten.DrawImageOptions{}
 	bx, by := camera.WIDTH/16.0, camera.HEIGHT/2.0-camera.HEIGHT/16
 	op.GeoM.Translate(bx, by)
@@ -494,7 +538,7 @@ func (e *Engine) drawNPCDialog(screen *ebiten.Image) {
 	ibw, ibh := borderw-camera.WIDTH/32, borderh-camera.HEIGHT/32
 	ibx, iby := bx+camera.WIDTH/64, by+camera.HEIGHT/64
 	img = ebiten.NewImage(ibw, ibh)
-	img.Fill(color.RGBA{R: 0, G: 0, B: 0, A: 0xff})
+	img.Fill(color.Black)
 	op = &ebiten.DrawImageOptions{}
 	op.GeoM.Translate(ibx, iby)
 	screen.DrawImage(img, op)
@@ -518,7 +562,7 @@ func (e *Engine) drawNPCDialog(screen *ebiten.Image) {
 	visibleLines := lines[l:r]
 	textOp := &text.DrawOptions{}
 	textOp.GeoM.Translate(dtx, dty)
-	textOp.ColorScale.ScaleWithColor(colorWhite)
+	textOp.ColorScale.ScaleWithColor(color.White)
 	text.Draw(screen, strings.Join(visibleLines, "\n"), face, textOp)
 
 	// Draw dialog input buffer.
@@ -595,6 +639,9 @@ func (e *Engine) Draw(screen *ebiten.Image) {
 		case object.NPC:
 			n := c.(*npc.NPC)
 			screen.DrawImage(n.Image, op)
+		case object.Arcade:
+			a := c.(*arcade.Machine)
+			screen.DrawImage(a.Image, op)
 		case object.EnemyBullet:
 			b := c.(*damage.Bullet)
 			if !b.Triggered {
@@ -608,7 +655,7 @@ func (e *Engine) Draw(screen *ebiten.Image) {
 		face := e.fontsManager.Get(fonts.Dialog)
 
 		teamtxt := fmt.Sprintf("Team %s", e.TeamName)
-		start := float64(72)
+		start := float64(16)
 		step := float64(36)
 		textOp := &text.DrawOptions{}
 		textOp.GeoM.Translate(start, start)
@@ -636,6 +683,10 @@ func (e *Engine) Draw(screen *ebiten.Image) {
 
 	if e.activeNPC != nil {
 		e.drawNPCDialog(screen)
+	}
+
+	if e.activeArcade != nil {
+		e.drawArcadeState(screen)
 	}
 }
 
@@ -699,6 +750,34 @@ func (e *Engine) Update(inp *input.Input) error {
 		return nil
 	}
 
+	if e.activeArcade != nil {
+		if inp.IsKeyNewlyPressed(ebiten.KeyEscape) {
+			if err := e.activeArcade.Game.Stop(); err != nil {
+				return fmt.Errorf("stopping arcade game: %w", err)
+			}
+			e.activeArcade = nil
+			return nil
+		}
+		if e.activeArcade.Game.State().Won && e.activeArcade.LinkedItem != nil {
+			e.activeArcade.LinkedItem.MoveTo(e.activeArcade.Origin.Add(&geometry.Vector{
+				X: +64,
+				Y: +32,
+			}))
+			return nil
+		}
+		if e.activeArcade.Game.State().Result != arcade.ResultUnknown {
+			// No need to feed the game if the result is known.
+			return nil
+		}
+		if e.Tick%5 != 0 {
+			return nil
+		}
+		if err := e.activeArcade.Game.Feed(inp.PressedKeys()); err != nil {
+			return fmt.Errorf("feeding arcade game: %w", err)
+		}
+		return nil
+	}
+
 	if e.Paused {
 		if inp.IsKeyNewlyPressed(ebiten.KeyP) {
 			e.Paused = false
@@ -743,6 +822,14 @@ func (e *Engine) Update(inp *input.Input) error {
 		e.activeNPC = availableNPC
 		e.activeNPC.Dialog.Greeting()
 		return nil
+	}
+
+	availableArcade := e.CheckArcadeClose()
+	if availableArcade != nil && inp.IsKeyNewlyPressed(ebiten.KeyE) {
+		e.activeArcade = availableArcade
+		if err := e.activeArcade.Game.Start(); err != nil {
+			return fmt.Errorf("starting arcade game: %w", err)
+		}
 	}
 
 	e.Camera.MoveTo(e.Player.Origin.Add(&geometry.Vector{
@@ -926,6 +1013,19 @@ func (e *Engine) CheckNPCClose() *npc.NPC {
 
 		n := c.(*npc.NPC)
 		return n
+	}
+
+	return nil
+}
+
+func (e *Engine) CheckArcadeClose() *arcade.Machine {
+	for _, c := range e.Collisions(e.Player.Rectangle().Extended(40)) {
+		if c.Type() != object.Arcade {
+			continue
+		}
+
+		a := c.(*arcade.Machine)
+		return a
 	}
 
 	return nil
