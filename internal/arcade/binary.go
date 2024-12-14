@@ -145,6 +145,8 @@ func (g *binaryGame) Feed(keys []ebiten.Key) error {
 		return g.Stop()
 	}
 
+	fmt.Println(g.buf[ScreenSize], g.buf[ScreenSize+1], g.buf[ScreenSize+2])
+
 	for i, c := range g.buf {
 		g.state.Screen[i/ScreenSize][i%ScreenSize] = colors[c]
 	}

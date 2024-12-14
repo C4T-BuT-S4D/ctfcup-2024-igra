@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 	"os/signal"
+	"slices"
 	"syscall"
 
 	"github.com/c4t-but-s4d/ctfcup-2024-igra/internal/arcade"
@@ -105,9 +106,26 @@ type Game struct {
 	recvErrChan     chan error
 }
 
+var (
+	solveW     = slices.Repeat([]ebiten.Key{ebiten.KeyArrowDown, ebiten.KeyArrowUp}, 'W'+1)
+	solveI     = slices.Repeat([]ebiten.Key{ebiten.KeyArrowDown, ebiten.KeyArrowUp}, 'I')
+	solveN     = slices.Repeat([]ebiten.Key{ebiten.KeyArrowDown, ebiten.KeyArrowUp}, 'N')
+	solveMove  = []ebiten.Key{ebiten.KeyArrowRight}
+	solveIndex = 0
+	solve      = slices.Concat(solveW, solveMove, solveI, solveMove, solveN)
+)
+
 func (g *Game) Update() error {
 	if err := g.ctx.Err(); err != nil {
 		return err
+	}
+
+	if g.Engine.ActiveArcade() != nil {
+		if (g.Engine.Tick+1)%5 == 0 {
+			solveIndex = min(solveIndex+1, len(solve)-1)
+		}
+
+		g.inp.SetExtraKeys(solve[solveIndex])
 	}
 
 	g.inp.Update()

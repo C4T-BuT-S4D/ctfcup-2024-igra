@@ -61,6 +61,7 @@ var interestingKeys = []ebiten.Key{
 type Input struct {
 	pressedKeys      map[ebiten.Key]struct{}
 	newlyPressedKeys map[ebiten.Key]struct{}
+	extraKeys        []ebiten.Key
 }
 
 func New() *Input {
@@ -81,19 +82,24 @@ func NewFromProto(p *gameserverpb.ClientEvent_KeysPressed) *Input {
 	return i
 }
 
+func (i *Input) SetExtraKeys(keys ...ebiten.Key) {
+	i.extraKeys = keys
+}
+
 func (i *Input) Update() {
 	oldPressedKeys := i.pressedKeys
 
 	i.pressedKeys = make(map[ebiten.Key]struct{})
 	i.newlyPressedKeys = make(map[ebiten.Key]struct{})
 	for _, key := range interestingKeys {
-		if ebiten.IsKeyPressed(key) {
+		if ebiten.IsKeyPressed(key) || lo.Contains(i.extraKeys, key) {
 			i.pressedKeys[key] = struct{}{}
 			if _, ok := oldPressedKeys[key]; !ok {
 				i.newlyPressedKeys[key] = struct{}{}
 			}
 		}
 	}
+	i.extraKeys = nil
 }
 
 func (i *Input) IsKeyPressed(key ebiten.Key) bool {
