@@ -851,7 +851,7 @@ func (e *Engine) ProcessPlayerInput(inp *input.Input) {
 func (e *Engine) AlignPlayerX() {
 	var pv *geometry.Vector
 
-	for _, c := range e.Collisions(e.Player.Rectangle(), object.StaticTile) {
+	for _, c := range Collide(e.Player.Rectangle(), e.Tiles) {
 		pv = c.Rectangle().PushVectorX(e.Player.Rectangle())
 		break
 	}
@@ -866,8 +866,8 @@ func (e *Engine) AlignPlayerX() {
 func (e *Engine) AlignPlayerY() {
 	var pv *geometry.Vector
 
-	for _, c := range e.Collisions(e.Player.Rectangle(), object.StaticTile) {
-		pv = c.Rectangle().PushVectorY(e.Player.Rectangle())
+	for _, t := range Collide(e.Player.Rectangle(), e.Tiles) {
+		pv = t.Rectangle().PushVectorY(e.Player.Rectangle())
 		break
 	}
 
@@ -889,8 +889,7 @@ func (e *Engine) AlignPlayerY() {
 func (e *Engine) CollectItems() error {
 	collectedSomething := false
 
-	for _, c := range e.Collisions(e.Player.Rectangle(), object.Item) {
-		it := c.(*item.Item)
+	for _, it := range Collide(e.Player.Rectangle(), e.Items) {
 		if it.Collected {
 			continue
 		}
@@ -915,8 +914,7 @@ func (e *Engine) CollectItems() error {
 }
 
 func (e *Engine) CheckPortals() {
-	for _, c := range e.Collisions(e.Player.Rectangle(), object.Portal) {
-		p := c.(*portal.Portal)
+	for _, p := range Collide(e.Player.Rectangle(), e.Portals) {
 		if p.TeleportTo == nil {
 			continue
 		}
@@ -937,8 +935,7 @@ func (e *Engine) CheckPortals() {
 }
 
 func (e *Engine) CheckSpikes() {
-	for _, c := range e.Collisions(e.Player.Rectangle(), object.Spike) {
-		s := c.(*damage.Spike)
+	for _, s := range Collide(e.Player.Rectangle(), e.Spikes) {
 		e.Player.Health -= s.Damage
 	}
 }
@@ -948,23 +945,15 @@ func (e *Engine) CheckEnemyBullets() {
 
 	for _, b := range e.EnemyBullets {
 		b.Move(b.Direction)
-		ok := true
-		for _, c := range e.Collisions(b.Rectangle()) {
-			if c.Type() == object.StaticTile {
-				ok = false
-				break
-			}
-		}
-		if ok {
+
+		if len(Collide(b.Rectangle(), e.Tiles)) == 0 {
 			bullets = append(bullets, b)
 		}
 	}
 
 	e.EnemyBullets = bullets
 
-	for _, c := range e.Collisions(e.Player.Rectangle(), object.EnemyBullet) {
-		b := c.(*damage.Bullet)
-
+	for _, b := range Collide(e.Player.Rectangle(), e.EnemyBullets) {
 		if b.Triggered {
 			continue
 		}
@@ -975,8 +964,7 @@ func (e *Engine) CheckEnemyBullets() {
 }
 
 func (e *Engine) CheckNPCClose() *npc.NPC {
-	for _, c := range e.Collisions(e.Player.Rectangle().Extended(40), object.NPC) {
-		n := c.(*npc.NPC)
+	for _, n := range Collide(e.Player.Rectangle().Extended(40), e.NPCs) {
 		return n
 	}
 
@@ -984,8 +972,7 @@ func (e *Engine) CheckNPCClose() *npc.NPC {
 }
 
 func (e *Engine) CheckArcadeClose() *arcade.Machine {
-	for _, c := range e.Collisions(e.Player.Rectangle().Extended(40), object.Arcade) {
-		a := c.(*arcade.Machine)
+	for _, a := range Collide(e.Player.Rectangle().Extended(40), e.Arcades) {
 		return a
 	}
 
