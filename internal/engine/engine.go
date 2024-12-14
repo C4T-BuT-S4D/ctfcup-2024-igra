@@ -451,21 +451,16 @@ func (e *Engine) drawYouWinScreen(screen *ebiten.Image) {
 func (e *Engine) drawArcadeState(screen *ebiten.Image) {
 	as := e.activeArcade.Game.State()
 
-	borderSizePx := 5
-	cameraRectSide := min(camera.WIDTH, camera.HEIGHT)
-	cameraInnerRectSide := cameraRectSide - borderSizePx*2
 	borderSizePx := 10
 	cameraInnerRectSide := (min(camera.WIDTH, camera.HEIGHT) - borderSizePx*2) / arcade.ScreenSize * arcade.ScreenSize
 	cameraRectSide := cameraInnerRectSide + borderSizePx*2
 
 	scaleFactor := cameraInnerRectSide / arcade.ScreenSize
 
-	arcadeSpace := float32(arcade.ScreenSize * scaleFactor)
-
 	mgx, mgy := float32((camera.WIDTH-cameraRectSide)/2), float32((camera.HEIGHT-cameraRectSide)/2)
-	borderSizeF := float32(borderSizePx) + (float32(cameraInnerRectSide)-arcadeSpace)/2
+	borderSizeF := float32(borderSizePx)
 	vector.DrawFilledRect(screen, mgx, mgy, float32(cameraRectSide), float32(cameraRectSide), color.White, false)
-	vector.DrawFilledRect(screen, mgx+borderSizeF, mgy+borderSizeF, arcadeSpace, arcadeSpace, color.Black, false)
+	vector.DrawFilledRect(screen, mgx+borderSizeF, mgy+borderSizeF, float32(cameraInnerRectSide), float32(cameraInnerRectSide), color.Black, false)
 
 	for i := range arcade.ScreenSize {
 		for j := range arcade.ScreenSize {
