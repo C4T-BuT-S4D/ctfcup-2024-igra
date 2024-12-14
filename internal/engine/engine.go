@@ -698,6 +698,16 @@ func (e *Engine) Update(inp *input.Input) error {
 			return nil
 		}
 
+		if inp.IsKeyNewlyPressed(ebiten.KeyR) {
+			if err := e.activeArcade.Game.Stop(); err != nil {
+				return fmt.Errorf("stopping arcade game: %w", err)
+			}
+			if err := e.activeArcade.Game.Start(); err != nil {
+				return fmt.Errorf("restarting arcade game: %w", err)
+			}
+			return nil
+		}
+
 		if result := e.activeArcade.Game.State().Result; result == arcade.ResultWon && e.activeArcade.LinkedItem != nil {
 			e.activeArcade.LinkedItem.MoveTo(e.activeArcade.Origin.Add(&geometry.Vector{
 				X: +64,
