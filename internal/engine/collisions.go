@@ -3,9 +3,10 @@ package engine
 import (
 	"github.com/c4t-but-s4d/ctfcup-2024-igra/internal/geometry"
 	"github.com/c4t-but-s4d/ctfcup-2024-igra/internal/object"
+	"slices"
 )
 
-func (e *Engine) Collisions(r *geometry.Rectangle) []object.GenericObject {
+func (e *Engine) Collisions(r *geometry.Rectangle, filter ...object.Type) []object.GenericObject {
 	var result []object.GenericObject
 
 	// Background image should be rendered first.
@@ -67,5 +68,16 @@ func (e *Engine) Collisions(r *geometry.Rectangle) []object.GenericObject {
 		}
 	}
 
-	return result
+	if len(filter) == 0 {
+		return result
+	}
+
+	var filtered []object.GenericObject
+	for _, o := range result {
+		if slices.Contains(filter, o.Type()) {
+			filtered = append(filtered, o)
+		}
+	}
+
+	return filtered
 }

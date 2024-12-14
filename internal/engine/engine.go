@@ -339,10 +339,11 @@ func New(config Config, resourceManager *ResourceManager, dialogProvider dialog.
 		if toPortal == nil {
 			return nil, fmt.Errorf("destination %s not found for portal %s", p.PortalTo, name)
 		}
-		p.TeleportTo = toPortal.Origin.Add(&geometry.Vector{
-			X: 32,
-			Y: 0,
-		})
+		//p.TeleportTo = toPortal.Origin.Add(&geometry.Vector{
+		//	X: 32,
+		//	Y: 0,
+		//})
+		p.TeleportTo = toPortal.Origin
 	}
 
 	cam := &camera.Camera{
@@ -862,7 +863,7 @@ func (e *Engine) ProcessPlayerInput(inp *input.Input) {
 func (e *Engine) AlignPlayerX() {
 	var pv *geometry.Vector
 
-	for _, c := range e.Collisions(e.Player.Rectangle()) {
+	for _, c := range e.Collisions(e.Player.Rectangle(), object.StaticTileType, object.InvWall) {
 		if c.Type() != object.StaticTileType && c.Type() != object.InvWall {
 			continue
 		}
@@ -881,11 +882,7 @@ func (e *Engine) AlignPlayerX() {
 func (e *Engine) AlignPlayerY() {
 	var pv *geometry.Vector
 
-	for _, c := range e.Collisions(e.Player.Rectangle()) {
-		if c.Type() != object.StaticTileType && c.Type() != object.InvWall {
-			continue
-		}
-
+	for _, c := range e.Collisions(e.Player.Rectangle(), object.StaticTileType, object.InvWall) {
 		pv = c.Rectangle().PushVectorY(e.Player.Rectangle())
 		break
 	}
@@ -908,11 +905,7 @@ func (e *Engine) AlignPlayerY() {
 func (e *Engine) CollectItems() error {
 	collectedSomething := false
 
-	for _, c := range e.Collisions(e.Player.Rectangle()) {
-		if c.Type() != object.Item {
-			continue
-		}
-
+	for _, c := range e.Collisions(e.Player.Rectangle(), object.Item) {
 		it := c.(*item.Item)
 		if it.Collected {
 			continue
@@ -938,26 +931,29 @@ func (e *Engine) CollectItems() error {
 }
 
 func (e *Engine) CheckPortals() {
-	for _, c := range e.Collisions(e.Player.Rectangle()) {
-		if c.Type() != object.Portal {
-			continue
-		}
-
+	for _, c := range e.Collisions(e.Player.Rectangle(), object.Portal) {
 		p := c.(*portal.Portal)
 		if p.TeleportTo == nil {
 			continue
 		}
 
-		e.Player.MoveTo(p.TeleportTo)
+		dx := 32.0
+		if e.Player.Speed.X < 0 {
+			e.Player.MoveTo(p.TeleportTo.Add(&geometry.Vector{
+				X: -dx,
+				Y: 0,
+			}))
+		} else {
+			e.Player.MoveTo(p.TeleportTo.Add(&geometry.Vector{
+				X: dx,
+				Y: 0,
+			}))
+		}
 	}
 }
 
 func (e *Engine) CheckSpikes() {
-	for _, c := range e.Collisions(e.Player.Rectangle()) {
-		if c.Type() != object.Spike {
-			continue
-		}
-
+	for _, c := range e.Collisions(e.Player.Rectangle(), object.Spike) {
 		s := c.(*damage.Spike)
 		e.Player.Health -= s.Damage
 	}
@@ -982,11 +978,7 @@ func (e *Engine) CheckEnemyBullets() {
 
 	e.EnemyBullets = bullets
 
-	for _, c := range e.Collisions(e.Player.Rectangle()) {
-		if c.Type() != object.EnemyBullet {
-			continue
-		}
-
+	for _, c := range e.Collisions(e.Player.Rectangle(), object.EnemyBullet) {
 		b := c.(*damage.Bullet)
 
 		if b.Triggered {
@@ -999,11 +991,7 @@ func (e *Engine) CheckEnemyBullets() {
 }
 
 func (e *Engine) CheckNPCClose() *npc.NPC {
-	for _, c := range e.Collisions(e.Player.Rectangle().Extended(40)) {
-		if c.Type() != object.NPC {
-			continue
-		}
-
+	for _, c := range e.Collisions(e.Player.Rectangle().Extended(40), object.NPC) {
 		n := c.(*npc.NPC)
 		return n
 	}
@@ -1012,11 +1000,7 @@ func (e *Engine) CheckNPCClose() *npc.NPC {
 }
 
 func (e *Engine) CheckArcadeClose() *arcade.Machine {
-	for _, c := range e.Collisions(e.Player.Rectangle().Extended(40)) {
-		if c.Type() != object.Arcade {
-			continue
-		}
-
+	for _, c := range e.Collisions(e.Player.Rectangle().Extended(40), object.Arcade) {
 		a := c.(*arcade.Machine)
 		return a
 	}
