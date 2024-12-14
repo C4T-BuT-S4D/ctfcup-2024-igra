@@ -11,7 +11,7 @@ type LocalProvider struct{}
 func (sp *LocalProvider) Get(id string) (Game, error) {
 	switch id {
 	case "brodilka":
-		return newBinaryGame("brodilka")
+		return newBinaryGame("./internal/resources/arcades/brodilka"), nil
 	case "simple":
 		return newSimpleGame(), nil
 	default:

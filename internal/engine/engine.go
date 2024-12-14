@@ -8,7 +8,6 @@ import (
 	"errors"
 	"fmt"
 	"image/color"
-	"math"
 	"os"
 	"path"
 	"path/filepath"
@@ -551,6 +550,8 @@ func (e *Engine) drawNPCDialog(screen *ebiten.Image) {
 	// Draw dialog text.
 	dtx, dty := ibx+camera.WIDTH/32, iby+camera.HEIGHT/32
 	face := e.fontsManager.Get(fonts.Dialog)
+	faceMetrics := face.Metrics()
+	lineHeight := (faceMetrics.HAscent + faceMetrics.HDescent)
 	txt := e.activeNPC.Dialog.State().Text
 
 	lines := input.AutoWrap(txt, face, ibw-camera.WIDTH/32)
@@ -560,21 +561,21 @@ func (e *Engine) drawNPCDialog(screen *ebiten.Image) {
 	r := min(e.dialogControl.scroll+dialogShowLines, len(lines))
 
 	visibleLines := lines[l:r]
-	textOp := &text.DrawOptions{}
+	textOp := &text.DrawOptions{LayoutOptions: text.LayoutOptions{LineSpacing: lineHeight}}
 	textOp.GeoM.Translate(dtx, dty)
 	textOp.ColorScale.ScaleWithColor(color.White)
 	text.Draw(screen, strings.Join(visibleLines, "\n"), face, textOp)
 
 	// Draw dialog input buffer.
 	if len(e.dialogControl.inputBuffer) > 0 {
-		dtbx, dtby := dtx, dty+float64(len(visibleLines))*math.Floor(face.Metrics().HLineGap)
+		dtbx, dtby := dtx, dty+float64(len(visibleLines))*lineHeight
 		ibuf := string(e.dialogControl.inputBuffer)
 		if e.dialogControl.maskInput {
 			ibuf = strings.Repeat("*", len(ibuf))
 		}
 		x := input.AutoWrap(ibuf, face, ibw-camera.WIDTH/32)
 
-		textOp := &text.DrawOptions{}
+		textOp := &text.DrawOptions{LayoutOptions: text.LayoutOptions{LineSpacing: lineHeight}}
 		textOp.GeoM.Translate(dtbx, dtby)
 		textOp.ColorScale.ScaleWithColor(color.RGBA{R: 0x00, G: 0xff, B: 0xff, A: 0xff})
 		text.Draw(screen, strings.Join(x, "\n"), face, textOp)
