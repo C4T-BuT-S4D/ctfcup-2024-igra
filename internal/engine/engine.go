@@ -618,8 +618,14 @@ func (e *Engine) Draw(screen *ebiten.Image) {
 		text.Draw(screen, tickTxt, face, textOp)
 
 		for i, it := range e.Player.Inventory.Items {
+			itemX := e.Camera.Width - float64(i+1)*72
+			itemY := 72
+
+			vector.StrokeRect(screen, float32(itemX-4), float32(itemY-4), 40, 40, 2, color.RGBA{R: 230, G: 230, B: 230, A: 255}, false)
+			vector.DrawFilledRect(screen, float32(itemX-4), float32(itemY-4), 40, 40, color.RGBA{R: 156, G: 150, B: 138, A: 196}, false)
+
 			op := &ebiten.DrawImageOptions{}
-			op.GeoM.Translate(e.Camera.Width-float64(i+1)*72, 72)
+			op.GeoM.Translate(float64(itemX), float64(itemY))
 			screen.DrawImage(it.Image(), op)
 		}
 	}

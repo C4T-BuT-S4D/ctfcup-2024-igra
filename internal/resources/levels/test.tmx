@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<map version="1.10" tiledversion="1.11.0" orientation="orthogonal" renderorder="right-down" width="400" height="300" tilewidth="32" tileheight="32" infinite="0" nextlayerid="10" nextobjectid="178">
+<map version="1.10" tiledversion="1.11.0" orientation="orthogonal" renderorder="right-down" width="400" height="300" tilewidth="32" tileheight="32" infinite="0" nextlayerid="10" nextobjectid="179">
  <properties>
   <property name="background" value="bg"/>
  </properties>
@@ -677,6 +677,11 @@
    <properties>
     <property name="important" type="bool" value="true"/>
     <property name="sprite" value="puc"/>
+   </properties>
+  </object>
+  <object id="178" name="altboots" type="item" x="1024" y="1120" width="32" height="32">
+   <properties>
+    <property name="sprite" value="altboots"/>
    </properties>
   </object>
  </objectgroup>
