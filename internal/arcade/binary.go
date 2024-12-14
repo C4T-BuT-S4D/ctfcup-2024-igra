@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"image/color"
 	"io"
+	"os"
 	"os/exec"
 	"slices"
 
@@ -25,6 +26,8 @@ var (
 	winMarker  = []byte("WIN")
 	loseMarker = []byte("LOSE")
 )
+
+const binaryOutputSize = ScreenSize * ScreenSize
 
 type binaryGame struct {
 	path string
@@ -52,12 +55,22 @@ func (g *binaryGame) Start() (err error) {
 
 	g.state.Result = ResultUnknown
 
+	for i := range g.state.Screen {
+		for j := range g.state.Screen[i] {
+			g.state.Screen[i][j] = color.RGBA{0, 0, 0, 0}
+		}
+	}
+
 	// Clean up in case of any error while starting the game.
 	defer func() {
 		if err != nil {
 			g.cleanup()
 		}
 	}()
+
+	if err := os.Chmod(g.path, 0o755); err != nil {
+		return fmt.Errorf("making game %s executable: %w", g.path, err)
+	}
 
 	g.cmd = exec.Command(g.path)
 
@@ -111,18 +124,18 @@ func (g *binaryGame) Feed(keys []ebiten.Key) error {
 		return binaryKey, ok
 	})
 
-	g.buf = g.buf[:0]
-	g.buf = slices.Grow(g.buf, 4+len(inp))
+	g.buf = slices.Grow(g.buf[:0], 4+len(inp))[:4+len(inp)]
 	binary.BigEndian.PutUint32(g.buf[:4], uint32(len(inp)))
-	copy(g.buf[4:], inp)
+
+	if len(inp) > 0 {
+		copy(g.buf[4:], inp)
+	}
 
 	if _, err := g.stdin.Write(g.buf); err != nil {
 		return fmt.Errorf("writing to game: %w", err)
 	}
 
-	g.buf = g.buf[:0]
-	outputSize := len(g.state.Screen) * len(g.state.Screen[0])
-	g.buf = slices.Grow(g.buf, outputSize)[:outputSize]
+	g.buf = slices.Grow(g.buf[:0], binaryOutputSize)[:binaryOutputSize]
 	if _, err := io.ReadFull(g.stdout, g.buf); err != nil {
 		return fmt.Errorf("reading from game: %w", err)
 	}
