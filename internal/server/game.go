@@ -14,8 +14,8 @@ import (
 
 	"github.com/c4t-but-s4d/ctfcup-2024-igra/internal/camera"
 	"github.com/c4t-but-s4d/ctfcup-2024-igra/internal/engine"
-	"github.com/c4t-but-s4d/ctfcup-2024-igra/internal/fonts"
 	"github.com/c4t-but-s4d/ctfcup-2024-igra/internal/input"
+	"github.com/c4t-but-s4d/ctfcup-2024-igra/internal/resources"
 	gameserverpb "github.com/c4t-but-s4d/ctfcup-2024-igra/proto/go/gameserver"
 )
 
@@ -25,8 +25,8 @@ type Game struct {
 	IsWin       bool
 	WasCheating bool
 
-	fontManager *fonts.Manager
-	engine      *engine.Engine
+	fontBundle *resources.FontBundle
+	engine     *engine.Engine
 
 	lock sync.Mutex
 
@@ -34,11 +34,11 @@ type Game struct {
 	shutdown     chan struct{}
 }
 
-func NewGame(snapshotsDir string, fontManager *fonts.Manager) *Game {
+func NewGame(snapshotsDir string, fontBundle *resources.FontBundle) *Game {
 	return &Game{
 		snapshotsDir: snapshotsDir,
 		shutdown:     make(chan struct{}),
-		fontManager:  fontManager,
+		fontBundle:   fontBundle,
 	}
 }
 
@@ -103,7 +103,7 @@ func (g *Game) Draw(screen *ebiten.Image) {
 	if g.engine != nil {
 		g.engine.Draw(screen)
 	} else {
-		face := g.fontManager.Get(fonts.DSouls)
+		face := g.fontBundle.GetFontFace(resources.FontSouls)
 
 		c := color.RGBA{0xff, 0xff, 0xff, 0xff}
 		team := strings.Split(os.Getenv("AUTH_TOKEN"), ":")[0]

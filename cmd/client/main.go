@@ -9,6 +9,7 @@ import (
 	"syscall"
 
 	"github.com/c4t-but-s4d/ctfcup-2024-igra/internal/arcade"
+	"github.com/c4t-but-s4d/ctfcup-2024-igra/internal/resources"
 
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/sirupsen/logrus"
@@ -39,7 +40,7 @@ func NewGame(ctx context.Context, client gameserverpb.GameServerServiceClient, l
 		Level: level,
 	}
 
-	mng := engine.NewResourceManager(true)
+	resourceBundle := resources.NewBundle(true)
 
 	arcadeProvider := &arcade.LocalProvider{}
 
@@ -58,13 +59,13 @@ func NewGame(ctx context.Context, client gameserverpb.GameServerServiceClient, l
 		dialogProvider := &dialog.ClientProvider{}
 
 		if snapshotProto := startSnapshotEvent.GetSnapshot(); snapshotProto.Data == nil {
-			e, err := engine.New(engineConfig, mng, dialogProvider, arcadeProvider)
+			e, err := engine.New(engineConfig, resourceBundle, dialogProvider, arcadeProvider)
 			if err != nil {
 				return nil, fmt.Errorf("creating engine without snapshot: %w", err)
 			}
 			g.Engine = e
 		} else {
-			e, err := engine.NewFromSnapshot(engineConfig, engine.NewSnapshotFromProto(snapshotProto), mng, dialogProvider, arcadeProvider)
+			e, err := engine.NewFromSnapshot(engineConfig, engine.NewSnapshotFromProto(snapshotProto), resourceBundle, dialogProvider, arcadeProvider)
 			if err != nil {
 				return nil, fmt.Errorf("creating engine from snapshot: %w", err)
 			}
@@ -83,7 +84,7 @@ func NewGame(ctx context.Context, client gameserverpb.GameServerServiceClient, l
 			}
 		}()
 	} else {
-		e, err := engine.New(engineConfig, mng, dialog.NewStandardProvider(true), arcadeProvider)
+		e, err := engine.New(engineConfig, resourceBundle, dialog.NewStandardProvider(true), arcadeProvider)
 		if err != nil {
 			return nil, fmt.Errorf("initializing engine: %w", err)
 		}

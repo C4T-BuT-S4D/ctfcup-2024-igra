@@ -27,18 +27,15 @@ import (
 	"github.com/c4t-but-s4d/ctfcup-2024-igra/internal/colors"
 	"github.com/c4t-but-s4d/ctfcup-2024-igra/internal/damage"
 	"github.com/c4t-but-s4d/ctfcup-2024-igra/internal/dialog"
-	"github.com/c4t-but-s4d/ctfcup-2024-igra/internal/fonts"
 	"github.com/c4t-but-s4d/ctfcup-2024-igra/internal/geometry"
 	"github.com/c4t-but-s4d/ctfcup-2024-igra/internal/input"
 	"github.com/c4t-but-s4d/ctfcup-2024-igra/internal/item"
-	"github.com/c4t-but-s4d/ctfcup-2024-igra/internal/music"
 	"github.com/c4t-but-s4d/ctfcup-2024-igra/internal/npc"
 	"github.com/c4t-but-s4d/ctfcup-2024-igra/internal/object"
 	"github.com/c4t-but-s4d/ctfcup-2024-igra/internal/physics"
 	"github.com/c4t-but-s4d/ctfcup-2024-igra/internal/player"
 	"github.com/c4t-but-s4d/ctfcup-2024-igra/internal/portal"
 	"github.com/c4t-but-s4d/ctfcup-2024-igra/internal/resources"
-	"github.com/c4t-but-s4d/ctfcup-2024-igra/internal/sprites"
 	"github.com/c4t-but-s4d/ctfcup-2024-igra/internal/tiles"
 	gameserverpb "github.com/c4t-but-s4d/ctfcup-2024-igra/proto/go/gameserver"
 
@@ -75,14 +72,12 @@ type Engine struct {
 
 	StartSnapshot *Snapshot `json:"-" msgpack:"-"`
 
-	fontsManager  *fonts.Manager
-	spriteManager *sprites.Manager
-	musicManager  *music.Manager
-	snapshotsDir  string
-	playerSpawn   *geometry.Point
-	activeNPC     *npc.NPC
-	activeArcade  *arcade.Machine
-	dialogControl dialogControl
+	resourceBundle *resources.Bundle
+	snapshotsDir   string
+	playerSpawn    *geometry.Point
+	activeNPC      *npc.NPC
+	activeArcade   *arcade.Machine
+	dialogControl  dialogControl
 
 	Muted    bool   `json:"-" msgpack:"-"`
 	Paused   bool   `json:"-" msgpack:"paused"`
@@ -109,28 +104,7 @@ func findPlayerSpawn(tileMap *tiled.Map) (*geometry.Point, error) {
 	return nil, ErrNoPlayerSpawn
 }
 
-type ResourceManager struct {
-	Sprites *sprites.Manager
-	Tiles   *tiles.Manager
-	Fonts   *fonts.Manager
-	Music   *music.Manager
-}
-
-func NewResourceManager(withMusic bool) *ResourceManager {
-	rm := &ResourceManager{
-		Sprites: sprites.NewManager(),
-		Tiles:   tiles.NewManager(),
-		Fonts:   fonts.NewManager(),
-	}
-
-	if withMusic {
-		rm.Music = music.NewManager()
-	}
-
-	return rm
-}
-
-func New(config Config, resourceManager *ResourceManager, dialogProvider dialog.Provider, arcadeProvider arcade.Provider) (*Engine, error) {
+func New(config Config, resourceBundle *resources.Bundle, dialogProvider dialog.Provider, arcadeProvider arcade.Provider) (*Engine, error) {
 	mapFile, err := resources.EmbeddedFS.Open(fmt.Sprintf("levels/%s.tmx", config.Level))
 	if err != nil {
 		return nil, fmt.Errorf("failed to open map: %w", err)
@@ -158,7 +132,7 @@ func New(config Config, resourceManager *ResourceManager, dialogProvider dialog.
 					return nil, fmt.Errorf("tileset image is empty")
 				}
 
-				tilesImage := resourceManager.Tiles.Get(dt.Tileset.Image.Source)
+				tilesImage := resourceBundle.GetTile(dt.Tileset.Image.Source)
 				tileImage := tilesImage.SubImage(spriteRect).(*ebiten.Image)
 
 				w, h := tmap.TileWidth, tmap.TileHeight
@@ -184,7 +158,7 @@ func New(config Config, resourceManager *ResourceManager, dialogProvider dialog.
 			return nil, fmt.Errorf("background image layer is empty")
 		}
 
-		bgImage := resourceManager.Tiles.Get(path.Base(l.Image.Source))
+		bgImage := resourceBundle.GetTile(path.Base(l.Image.Source))
 		bgImages = append(bgImages, &tiles.BackgroundImage{
 			StaticTile: *tiles.NewStaticTile(
 				&geometry.Point{
@@ -202,7 +176,7 @@ func New(config Config, resourceManager *ResourceManager, dialogProvider dialog.
 		return nil, fmt.Errorf("can't find player position: %w", err)
 	}
 
-	p, err := player.New(playerPos, resourceManager.Sprites)
+	p, err := player.New(playerPos, resourceBundle.SpriteBundle)
 	if err != nil {
 		return nil, fmt.Errorf("creating player: %w", err)
 	}
@@ -224,7 +198,7 @@ func New(config Config, resourceManager *ResourceManager, dialogProvider dialog.
 				img.Fill(color.RGBA{R: 0xff, G: 0x00, B: 0x00, A: 0xff})
 
 				if sprite := o.Properties.GetString("sprite"); sprite != "" {
-					img = resourceManager.Sprites.GetSprite(sprites.Type(sprite))
+					img = resourceBundle.GetSprite(resources.SpriteType(sprite))
 				}
 
 				items = append(items, item.New(
@@ -244,7 +218,7 @@ func New(config Config, resourceManager *ResourceManager, dialogProvider dialog.
 						X: o.X,
 						Y: o.Y,
 					},
-					resourceManager.Sprites.GetSprite(sprites.Portal),
+					resourceBundle.GetSprite(resources.SpritePortal),
 					o.Width,
 					o.Height,
 					o.Properties.GetString("portal-to"),
@@ -256,13 +230,13 @@ func New(config Config, resourceManager *ResourceManager, dialogProvider dialog.
 						X: o.X,
 						Y: o.Y,
 					},
-					resourceManager.Sprites.GetSprite(sprites.Spike),
+					resourceBundle.GetSprite(resources.SpriteSpike),
 					o.Width,
 					o.Height,
 				))
 			case "npc":
-				img := resourceManager.Sprites.GetSprite(sprites.Type(o.Properties.GetString("sprite")))
-				dimg := resourceManager.Sprites.GetSprite(sprites.Type(o.Properties.GetString("dialog-sprite")))
+				img := resourceBundle.GetSprite(resources.SpriteType(o.Properties.GetString("sprite")))
+				dimg := resourceBundle.GetSprite(resources.SpriteType(o.Properties.GetString("dialog-sprite")))
 				npcd, err := dialogProvider.Get(o.Name)
 				if err != nil {
 					return nil, fmt.Errorf("getting '%s' dialog: %w", o.Name, err)
@@ -282,7 +256,7 @@ func New(config Config, resourceManager *ResourceManager, dialogProvider dialog.
 			case "boss-win":
 				winPoints[o.Name] = &geometry.Point{X: o.X, Y: o.Y}
 			case "arcade":
-				img := resourceManager.Sprites.GetSprite(sprites.Arcade)
+				img := resourceBundle.GetSprite(resources.SpriteArcade)
 				arc, err := arcadeProvider.Get(o.Name)
 				if err != nil {
 					return nil, fmt.Errorf("getting '%s' arcade: %w", o.Name, err)
@@ -364,9 +338,7 @@ func New(config Config, resourceManager *ResourceManager, dialogProvider dialog.
 		Spikes:           spikes,
 		NPCs:             npcs,
 		Arcades:          arcades,
-		spriteManager:    resourceManager.Sprites,
-		fontsManager:     resourceManager.Fonts,
-		musicManager:     resourceManager.Music,
+		resourceBundle:   resourceBundle,
 		snapshotsDir:     config.SnapshotsDir,
 		playerSpawn:      playerPos,
 		Level:            config.Level,
@@ -377,8 +349,8 @@ func New(config Config, resourceManager *ResourceManager, dialogProvider dialog.
 	}, nil
 }
 
-func NewFromSnapshot(config Config, snapshot *Snapshot, resourceManager *ResourceManager, dialogProvider dialog.Provider, arcadeProvider arcade.Provider) (*Engine, error) {
-	e, err := New(config, resourceManager, dialogProvider, arcadeProvider)
+func NewFromSnapshot(config Config, snapshot *Snapshot, resourceBundle *resources.Bundle, dialogProvider dialog.Provider, arcadeProvider arcade.Provider) (*Engine, error) {
+	e, err := New(config, resourceBundle, dialogProvider, arcadeProvider)
 	if err != nil {
 		return nil, fmt.Errorf("creating engine: %w", err)
 	}
@@ -450,7 +422,7 @@ func (e *Engine) SaveSnapshot(snapshot *Snapshot) error {
 }
 
 func (e *Engine) drawDiedScreen(screen *ebiten.Image) {
-	face := e.fontsManager.Get(fonts.DSouls)
+	face := e.resourceBundle.GetFontFace(resources.FontSouls)
 	redColor := color.RGBA{R: 255, G: 0, B: 0, A: 255}
 
 	width, _ := text.Measure("YOU DIED", face, 0)
@@ -462,7 +434,7 @@ func (e *Engine) drawDiedScreen(screen *ebiten.Image) {
 }
 
 func (e *Engine) drawYouWinScreen(screen *ebiten.Image) {
-	face := e.fontsManager.Get(fonts.DSouls)
+	face := e.resourceBundle.GetFontFace(resources.FontSouls)
 	gColor := color.RGBA{R: 0, G: 255, B: 0, A: 255}
 
 	width, _ := text.Measure("YOU WIN", face, 0)
@@ -504,7 +476,7 @@ func (e *Engine) drawArcadeState(screen *ebiten.Image) {
 		txt, txtC = "YOU WIN. PRESS ESC TO CONTINUE", colors.Green
 	}
 
-	face := e.fontsManager.Get(fonts.DSouls)
+	face := e.resourceBundle.GetFontFace(resources.FontSouls)
 	width, _ := text.Measure(txt, face, 0)
 	textOp := &text.DrawOptions{}
 	textOp.GeoM.Translate(camera.WIDTH/2-width/2, camera.HEIGHT/2)
@@ -530,7 +502,7 @@ func (e *Engine) drawNPCDialog(screen *ebiten.Image) {
 
 	// Draw dialog text.
 	dtx, dty := float64(ibx+camera.WIDTH/32), float64(iby+camera.HEIGHT/32)
-	face := e.fontsManager.Get(fonts.Dialog)
+	face := e.resourceBundle.GetFontFace(resources.FontDialog)
 	faceMetrics := face.Metrics()
 	lineHeight := faceMetrics.HAscent + faceMetrics.HDescent
 	txt := e.activeNPC.Dialog.State().Text
@@ -613,7 +585,7 @@ func (e *Engine) Draw(screen *ebiten.Image) {
 	}
 
 	if !e.Player.IsDead() {
-		face := e.fontsManager.Get(fonts.Dialog)
+		face := e.resourceBundle.GetFontFace(resources.FontDialog)
 
 		teamtxt := fmt.Sprintf("Team %s", e.TeamName)
 		start := float64(16)
@@ -654,8 +626,8 @@ func (e *Engine) Draw(screen *ebiten.Image) {
 func (e *Engine) Update(inp *input.Input) error {
 	e.Tick++
 
-	if e.musicManager != nil {
-		p := e.musicManager.GetPlayer(music.Background)
+	if e.resourceBundle.MusicBundle != nil {
+		p := e.resourceBundle.GetMusicPlayer(resources.MusicBackground)
 		if !e.Muted {
 			p.Play()
 		}

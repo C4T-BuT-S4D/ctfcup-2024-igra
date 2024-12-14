@@ -9,7 +9,7 @@ import (
 	"github.com/c4t-but-s4d/ctfcup-2024-igra/internal/item"
 	"github.com/c4t-but-s4d/ctfcup-2024-igra/internal/object"
 	"github.com/c4t-but-s4d/ctfcup-2024-igra/internal/physics"
-	"github.com/c4t-but-s4d/ctfcup-2024-igra/internal/sprites"
+	"github.com/c4t-but-s4d/ctfcup-2024-igra/internal/resources"
 )
 
 const (
@@ -41,7 +41,7 @@ type Player struct {
 	coyoteTick     int
 }
 
-func New(origin *geometry.Point, spriteManager *sprites.Manager) (*Player, error) {
+func New(origin *geometry.Point, spriteBundle *resources.SpriteBundle) (*Player, error) {
 	animations := make(map[string][]*ebiten.Image)
 
 	for anim, numAnims := range map[string]int{
@@ -51,7 +51,7 @@ func New(origin *geometry.Point, spriteManager *sprites.Manager) (*Player, error
 		FallingAnimation:  1,
 	} {
 		for i := 0; i < numAnims; i++ {
-			img := spriteManager.GetAnimationSprite(sprites.Player, fmt.Sprintf("%s_%d", anim, i))
+			img := spriteBundle.GetAnimationSprite(resources.SpritePlayer, fmt.Sprintf("%s_%d", anim, i))
 			animations[anim] = append(animations[anim], img)
 		}
 	}
