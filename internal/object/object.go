@@ -12,6 +12,7 @@ const (
 	Spike
 	InvWall
 	NPC
+	ArcadeMachine
 	BossV1
 	BossV2
 	EnemyBullet

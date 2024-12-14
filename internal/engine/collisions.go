@@ -55,6 +55,12 @@ func (e *Engine) Collisions(r *geometry.Rectangle) []object.GenericObject {
 		}
 	}
 
+	for _, t := range e.ArcadeMachines {
+		if t.Rectangle().Intersects(r) {
+			result = append(result, t)
+		}
+	}
+
 	for _, t := range e.EnemyBullets {
 		if t.Rectangle().Intersects(r) {
 			result = append(result, t)

@@ -70,6 +70,7 @@ type Engine struct {
 	Spikes           []*damage.Spike          `json:"-" msgpack:"spikes"`
 	InvWalls         []*wall.InvWall          `json:"-" msgpack:"invWalls"`
 	NPCs             []*npc.NPC               `json:"-" msgpack:"npcs"`
+	ArcadeMachines   []*arcade.Machine        `json:"-" msgpack:"arcades"`
 	EnemyBullets     []*damage.Bullet         `json:"-" msgpack:"enemyBullets"`
 	BackgroundImages []*tiles.BackgroundImage `json:"-" msgpack:"backgroundImages"`
 
@@ -370,6 +371,7 @@ func New(config Config, resourceManager *ResourceManager, dialogProvider dialog.
 		Spikes:           spikes,
 		InvWalls:         invwalls,
 		NPCs:             npcs,
+		ArcadeMachines:   arcades,
 		spriteManager:    resourceManager.Sprites,
 		fontsManager:     resourceManager.Fonts,
 		musicManager:     resourceManager.Music,
@@ -596,6 +598,9 @@ func (e *Engine) Draw(screen *ebiten.Image) {
 		case object.NPC:
 			n := c.(*npc.NPC)
 			screen.DrawImage(n.Image, op)
+		case object.ArcadeMachine:
+			m := c.(*arcade.Machine)
+			screen.DrawImage(m.Image, op)
 		case object.EnemyBullet:
 			b := c.(*damage.Bullet)
 			if !b.Triggered {

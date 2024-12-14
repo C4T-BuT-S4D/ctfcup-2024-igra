@@ -7,11 +7,9 @@ import (
 	"fmt"
 	"image/color"
 	"io"
-	"os"
 	"os/exec"
 	"slices"
 
-	"github.com/c4t-but-s4d/ctfcup-2024-igra/internal/resources"
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/samber/lo"
 )
@@ -29,28 +27,18 @@ var (
 )
 
 type binaryGame struct {
-	name   string
-	binary []byte
-	buf    []byte
+	path string
 
-	path   string
 	cmd    *exec.Cmd
+	buf    []byte
 	stdin  io.WriteCloser
 	stdout io.ReadCloser
 
 	state State
 }
 
-func newBinaryGame(name string) (*binaryGame, error) {
-	binary, err := resources.EmbeddedFS.ReadFile(name)
-	if err != nil {
-		return nil, fmt.Errorf("reading embedded arcade %s: %w", name, err)
-	}
-
-	return &binaryGame{
-		name:   name,
-		binary: binary,
-	}, nil
+func newBinaryGame(path string) *binaryGame {
+	return &binaryGame{path: path}
 }
 
 func (g *binaryGame) State() *State {
@@ -58,7 +46,7 @@ func (g *binaryGame) State() *State {
 }
 
 func (g *binaryGame) Start() (err error) {
-	if g.path != "" {
+	if g.cmd != nil {
 		return fmt.Errorf("game already started")
 	}
 
@@ -71,21 +59,6 @@ func (g *binaryGame) Start() (err error) {
 		}
 	}()
 
-	f, err := os.CreateTemp("", g.name)
-	if err != nil {
-		return err
-	}
-	defer f.Close()
-
-	if _, err := f.Write(g.binary); err != nil {
-		return fmt.Errorf("dumping binary to %s: %w", f.Name(), err)
-	}
-
-	if err := os.Chmod(f.Name(), 0o755); err != nil {
-		return fmt.Errorf("setting permissions for %s: %w", f.Name(), err)
-	}
-
-	g.path = f.Name()
 	g.cmd = exec.Command(g.path)
 
 	g.stdin, err = g.cmd.StdinPipe()
@@ -107,7 +80,7 @@ func (g *binaryGame) Start() (err error) {
 }
 
 func (g *binaryGame) Stop() error {
-	if g.path == "" {
+	if g.cmd == nil {
 		return nil
 	}
 
@@ -176,11 +149,6 @@ func (g *binaryGame) cleanup() {
 		_ = g.cmd.Process.Kill()
 	}
 
-	if g.path != "" {
-		_ = os.Remove(g.path)
-	}
-
-	g.path = ""
 	g.cmd = nil
 	g.stdin = nil
 	g.stdout = nil
