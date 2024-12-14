@@ -13,25 +13,15 @@ const (
 )
 
 type Bullet struct {
-	*object.Base
-	Image      *ebiten.Image `msgpack:"-"`
+	*object.Rendered
 	Damageable `msgpack:"-"`
 	Direction  *geometry.Vector
 	Triggered  bool
 }
 
-func (e *Bullet) Type() object.Type {
-	return object.EnemyBullet
-}
-
 func NewBullet(origin *geometry.Point, img *ebiten.Image, damage int, direction *geometry.Vector) *Bullet {
 	return &Bullet{
-		Base: &object.Base{
-			Origin: origin,
-			Width:  BulletWidth,
-			Height: BulletHeight,
-		},
-		Image:      img,
+		Rendered:   object.NewRendered(origin, img, BulletWidth, BulletHeight),
 		Damageable: NewDamageable(damage),
 		Direction:  direction,
 	}

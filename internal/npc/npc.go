@@ -10,26 +10,17 @@ import (
 )
 
 type NPC struct {
-	*object.Base
+	*object.Rendered
+
 	Dialog      dialog.Dialog `msgpack:"-"`
-	Image       *ebiten.Image `msgpack:"-"`
 	DialogImage *ebiten.Image `msgpack:"-"`
 	LinkedItem  *item.Item    `msgpack:"-"`
 	ReturnsItem string
 }
 
-func (n *NPC) Type() object.Type {
-	return object.NPC
-}
-
 func New(origin *geometry.Point, img *ebiten.Image, dialogImage *ebiten.Image, width, height float64, dialog dialog.Dialog, item string) *NPC {
 	return &NPC{
-		Base: &object.Base{
-			Origin: origin,
-			Width:  width,
-			Height: height,
-		},
-		Image:       img,
+		Rendered:    object.NewRendered(origin, img, width, height),
 		DialogImage: dialogImage,
 		Dialog:      dialog,
 		ReturnsItem: item,

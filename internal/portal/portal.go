@@ -8,27 +8,17 @@ import (
 )
 
 type Portal struct {
-	*object.Base
-	Image      *ebiten.Image `msgpack:"-"`
+	*object.Rendered
 	PortalTo   string
 	TeleportTo *geometry.Point
 	Boss       string
 }
 
-func (p *Portal) Type() object.Type {
-	return object.Portal
-}
-
 func New(origin *geometry.Point, img *ebiten.Image, width, height float64, portalTo string, teleportTo *geometry.Point, boss string) *Portal {
 	return &Portal{
-		Base: &object.Base{
-			Origin: origin,
-			Width:  width,
-			Height: height,
-		},
+		Rendered:   object.NewRendered(origin, img, width, height),
 		PortalTo:   portalTo,
 		TeleportTo: teleportTo,
-		Image:      img,
 		Boss:       boss,
 	}
 }

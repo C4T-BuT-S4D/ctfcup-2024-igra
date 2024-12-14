@@ -8,24 +8,13 @@ import (
 )
 
 type Spike struct {
-	*object.Base
+	*object.Rendered
 	Damageable
-
-	Image *ebiten.Image `msgpack:"-"`
-}
-
-func (s *Spike) Type() object.Type {
-	return object.Spike
 }
 
 func NewSpike(origin *geometry.Point, img *ebiten.Image, width, height float64) *Spike {
 	return &Spike{
-		Base: &object.Base{
-			Origin: origin,
-			Width:  width,
-			Height: height,
-		},
-		Image:      img,
+		Rendered:   object.NewRendered(origin, img, width, height),
 		Damageable: NewDamageable(100),
 	}
 }

@@ -6,8 +6,8 @@ import (
 	"github.com/c4t-but-s4d/ctfcup-2024-igra/internal/player"
 )
 
-func (e *Engine) Collisions(r *geometry.Rectangle) []object.Generic {
-	var result []object.Generic
+func (e *Engine) Collisions(r *geometry.Rectangle) []object.Collidable {
+	var result []object.Collidable
 
 	// Collision order is important for rendering:
 	// - Background is rendered first
@@ -25,7 +25,7 @@ func (e *Engine) Collisions(r *geometry.Rectangle) []object.Generic {
 	return result
 }
 
-func Collide[O object.Generic](r *geometry.Rectangle, objects []O) []O {
+func Collide[O object.Collidable](r *geometry.Rectangle, objects []O) []O {
 	var result []O
 	for _, o := range objects {
 		if o.Rectangle().Intersects(r) {
@@ -35,7 +35,7 @@ func Collide[O object.Generic](r *geometry.Rectangle, objects []O) []O {
 	return result
 }
 
-func collideGeneric[O object.Generic](result []object.Generic, r *geometry.Rectangle, objects []O) []object.Generic {
+func collideGeneric[O object.Collidable](result []object.Collidable, r *geometry.Rectangle, objects []O) []object.Collidable {
 	for _, o := range objects {
 		if o.Rectangle().Intersects(r) {
 			result = append(result, o)

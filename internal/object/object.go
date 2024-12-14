@@ -1,20 +1,8 @@
 package object
 
-import "github.com/c4t-but-s4d/ctfcup-2024-igra/internal/geometry"
-
-type Type int
-
-const (
-	BackgroundImage Type = iota
-	StaticTile
-	Player
-	Item
-	Portal
-	Spike
-	NPC
-	ArcadeMachine
-	EnemyBullet
-	Arcade
+import (
+	"github.com/c4t-but-s4d/ctfcup-2024-igra/internal/geometry"
+	"github.com/hajimehoshi/ebiten/v2"
 )
 
 type Base struct {
@@ -49,7 +37,30 @@ func (b *Base) MoveTo(p *geometry.Point) *Base {
 	return b
 }
 
-type Generic interface {
+type Rendered struct {
+	*Base
+	StaticImage *ebiten.Image `msgpack:"-"`
+}
+
+func NewRendered(origin *geometry.Point, img *ebiten.Image, width, height float64) *Rendered {
+	return &Rendered{
+		Base: &Base{
+			Origin: origin,
+			Width:  width,
+			Height: height,
+		},
+		StaticImage: img,
+	}
+}
+
+func (r *Rendered) Image() *ebiten.Image {
+	return r.StaticImage
+}
+
+type Collidable interface {
 	Rectangle() *geometry.Rectangle
-	Type() Type
+}
+
+type Drawable interface {
+	Image() *ebiten.Image
 }

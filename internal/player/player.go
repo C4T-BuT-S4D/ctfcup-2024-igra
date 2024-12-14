@@ -106,10 +106,6 @@ func (p *Player) IsDead() bool {
 	return p.Health <= 0
 }
 
-func (p *Player) Type() object.Type {
-	return object.Player
-}
-
 func (p *Player) Collect(it *item.Item) {
 	it.Collected = true
 	p.Inventory.Items = append(p.Inventory.Items, it)

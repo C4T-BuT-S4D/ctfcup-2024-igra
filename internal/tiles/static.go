@@ -8,22 +8,11 @@ import (
 )
 
 type StaticTile struct {
-	*object.Base
-
-	Image *ebiten.Image
+	*object.Rendered
 }
 
 func NewStaticTile(origin *geometry.Point, width, height int, image *ebiten.Image) *StaticTile {
 	return &StaticTile{
-		Base: &object.Base{
-			Origin: origin,
-			Width:  float64(width),
-			Height: float64(height),
-		},
-		Image: image,
+		Rendered: object.NewRendered(origin, image, float64(width), float64(height)),
 	}
-}
-
-func (s *StaticTile) Type() object.Type {
-	return object.StaticTile
 }

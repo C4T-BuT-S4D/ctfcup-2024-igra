@@ -579,13 +579,13 @@ func (e *Engine) Draw(screen *ebiten.Image) {
 		base := geometry.Origin.Add(visible)
 		op := &ebiten.DrawImageOptions{}
 
-		switch c.Type() {
-		case object.Player:
+		switch c.(type) {
+		case *player.Player:
 			if e.Player.LooksRight {
 				op.GeoM.Scale(-1, 1)
 				op.GeoM.Translate(e.Player.Width, 0)
 			}
-		case object.EnemyBullet:
+		case *damage.Bullet:
 			op.GeoM.Scale(4, 4)
 			op.GeoM.Translate(-2, 0)
 		default:
@@ -597,38 +597,17 @@ func (e *Engine) Draw(screen *ebiten.Image) {
 			base.Y,
 		)
 
-		switch c.Type() {
-		case object.BackgroundImage:
-			bi := c.(*tiles.BackgroundImage)
-			screen.DrawImage(bi.Image, op)
-		case object.StaticTile:
-			t := c.(*tiles.StaticTile)
-			screen.DrawImage(t.Image, op)
-		case object.Item:
-			it := c.(*item.Item)
-			if it.Collected {
-				continue
+		switch obj := c.(type) {
+		case *item.Item:
+			if !obj.Collected {
+				screen.DrawImage(obj.Image(), op)
 			}
-			screen.DrawImage(it.Image, op)
-		case object.Player:
-			screen.DrawImage(e.Player.Image(), op)
-		case object.Portal:
-			p := c.(*portal.Portal)
-			screen.DrawImage(p.Image, op)
-		case object.Spike:
-			d := c.(*damage.Spike)
-			screen.DrawImage(d.Image, op)
-		case object.NPC:
-			n := c.(*npc.NPC)
-			screen.DrawImage(n.Image, op)
-		case object.Arcade:
-			a := c.(*arcade.Machine)
-			screen.DrawImage(a.Image, op)
-		case object.EnemyBullet:
-			b := c.(*damage.Bullet)
-			if !b.Triggered {
-				screen.DrawImage(b.Image, op)
+		case *damage.Bullet:
+			if !obj.Triggered {
+				screen.DrawImage(obj.Image(), op)
 			}
+		case object.Drawable:
+			screen.DrawImage(obj.Image(), op)
 		default:
 		}
 	}
@@ -659,7 +638,7 @@ func (e *Engine) Draw(screen *ebiten.Image) {
 		for i, it := range e.Player.Inventory.Items {
 			op := &ebiten.DrawImageOptions{}
 			op.GeoM.Translate(e.Camera.Width-float64(i+1)*72, 72)
-			screen.DrawImage(it.Image, op)
+			screen.DrawImage(it.Image(), op)
 		}
 	}
 
