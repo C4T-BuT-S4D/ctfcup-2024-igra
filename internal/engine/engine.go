@@ -299,14 +299,12 @@ func New(config Config, resourceBundle *resources.Bundle, dialogProvider dialog.
 		if p.PortalTo == "" {
 			continue
 		}
-		toPortal := portalsMap[p.PortalTo]
-		if toPortal == nil {
+
+		toPortal, ok := portalsMap[p.PortalTo]
+		if !ok {
 			return nil, fmt.Errorf("destination %s not found for portal %s", p.PortalTo, name)
 		}
-		//p.TeleportTo = toPortal.Origin.Add(&geometry.Vector{
-		//	X: 32,
-		//	Y: 0,
-		//})
+
 		p.TeleportTo = toPortal.Origin
 	}
 
@@ -916,7 +914,9 @@ func (e *Engine) CheckEnemyBullets() {
 
 func (e *Engine) CheckNPCClose() *npc.NPC {
 	for _, n := range Collide(e.Player.Rectangle().Extended(40), e.NPCs) {
-		return n
+		if !n.Dialog.State().Finished {
+			return n
+		}
 	}
 
 	return nil
@@ -924,7 +924,9 @@ func (e *Engine) CheckNPCClose() *npc.NPC {
 
 func (e *Engine) CheckArcadeClose() *arcade.Machine {
 	for _, a := range Collide(e.Player.Rectangle().Extended(40), e.Arcades) {
-		return a
+		if !a.Game.State().Won {
+			return a
+		}
 	}
 
 	return nil
