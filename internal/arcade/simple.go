@@ -1,8 +1,9 @@
 package arcade
 
 import (
-	"github.com/hajimehoshi/ebiten/v2"
 	"image/color"
+
+	"github.com/hajimehoshi/ebiten/v2"
 )
 
 type cell int
@@ -34,12 +35,13 @@ func newSimpleGame() *Simple {
 }
 
 type Simple struct {
-	state     [ScreenSize][ScreenSize]cell
-	nextState [ScreenSize][ScreenSize]cell
-	lost      bool
-	won       bool
-	finish    coord
-	player    coord
+	state      [ScreenSize][ScreenSize]cell
+	nextState  [ScreenSize][ScreenSize]cell
+	lost       bool
+	won        bool
+	finish     coord
+	player     coord
+	alreadyWon bool
 }
 
 func (s *Simple) Start() error {
@@ -88,6 +90,7 @@ func (s *Simple) Feed(keys []ebiten.Key) error {
 	}
 	if s.finish == s.player {
 		s.won = true
+		s.alreadyWon = true
 	}
 	s.nextState[s.player.y][s.player.x] = empty
 	s.player = coord{x, y}
@@ -131,7 +134,6 @@ func (s *Simple) toMove(key ebiten.Key) move {
 
 func (s *Simple) State() *State {
 	var state State
-	state.Won = s.won
 	if s.won {
 		state.Result = ResultWon
 	}

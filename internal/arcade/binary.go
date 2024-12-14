@@ -129,7 +129,6 @@ func (g *binaryGame) Feed(keys []ebiten.Key) error {
 
 	// Don't update screen if game has already won or lost.
 	if bytes.Contains(g.buf, winMarker) {
-		g.state.Won = true
 		g.state.Result = ResultWon
 		return g.Stop()
 	} else if bytes.Contains(g.buf, loseMarker) {

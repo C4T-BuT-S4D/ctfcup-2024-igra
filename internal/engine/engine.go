@@ -544,64 +544,71 @@ func (e *Engine) Draw(screen *ebiten.Image) {
 		return
 	}
 
-	for _, c := range e.Collisions(e.Camera.Rectangle()) {
-		visible := c.Rectangle().Sub(e.Camera.Rectangle())
-		base := geometry.Origin.Add(visible)
-		op := &ebiten.DrawImageOptions{}
+	if e.activeArcade == nil {
+		for _, c := range e.Collisions(e.Camera.Rectangle()) {
+			visible := c.Rectangle().Sub(e.Camera.Rectangle())
+			base := geometry.Origin.Add(visible)
+			op := &ebiten.DrawImageOptions{}
 
-		switch c.(type) {
-		case *player.Player:
-			if e.Player.LooksRight {
-				op.GeoM.Scale(-1, 1)
-				op.GeoM.Translate(e.Player.Width, 0)
+			switch c.(type) {
+			case *player.Player:
+				if e.Player.LooksRight {
+					op.GeoM.Scale(-1, 1)
+					op.GeoM.Translate(e.Player.Width, 0)
+				}
+			case *damage.Bullet:
+				op.GeoM.Scale(4, 4)
+				op.GeoM.Translate(-2, 0)
+			default:
+				// not a player or boss.
 			}
-		case *damage.Bullet:
-			op.GeoM.Scale(4, 4)
-			op.GeoM.Translate(-2, 0)
-		default:
-			// not a player or boss.
-		}
 
-		op.GeoM.Translate(
-			base.X,
-			base.Y,
-		)
+			op.GeoM.Translate(
+				base.X,
+				base.Y,
+			)
 
-		switch obj := c.(type) {
-		case *item.Item:
-			if !obj.Collected {
+			switch obj := c.(type) {
+			case *item.Item:
+				if !obj.Collected {
+					screen.DrawImage(obj.Image(), op)
+				}
+			case *damage.Bullet:
+				if !obj.Triggered {
+					screen.DrawImage(obj.Image(), op)
+				}
+			case object.Drawable:
 				screen.DrawImage(obj.Image(), op)
+			default:
 			}
-		case *damage.Bullet:
-			if !obj.Triggered {
-				screen.DrawImage(obj.Image(), op)
-			}
-		case object.Drawable:
-			screen.DrawImage(obj.Image(), op)
-		default:
 		}
 	}
 
 	if !e.Player.IsDead() {
 		face := e.resourceBundle.GetFontFace(resources.FontDialog)
-
-		teamtxt := fmt.Sprintf("Team %s", e.TeamName)
 		start := float64(16)
 		step := float64(36)
+		index := float64(0)
+
+		teamtxt := fmt.Sprintf("Team %s", e.TeamName)
 		textOp := &text.DrawOptions{}
-		textOp.GeoM.Translate(start, start)
+		textOp.GeoM.Translate(start, start+step*index)
 		textOp.ColorScale.ScaleWithColor(color.RGBA{R: 204, G: 14, B: 206, A: 255})
 		text.Draw(screen, teamtxt, face, textOp)
+		index++
 
-		txt := fmt.Sprintf("HP: %d", e.Player.Health)
-		textOp = &text.DrawOptions{}
-		textOp.GeoM.Translate(start, start+step*1)
-		textOp.ColorScale.ScaleWithColor(color.RGBA{R: 0, G: 255, B: 0, A: 255})
-		text.Draw(screen, txt, face, textOp)
+		if e.activeArcade == nil {
+			txt := fmt.Sprintf("HP: %d", e.Player.Health)
+			textOp = &text.DrawOptions{}
+			textOp.GeoM.Translate(start, start+step*index)
+			textOp.ColorScale.ScaleWithColor(color.RGBA{R: 0, G: 255, B: 0, A: 255})
+			text.Draw(screen, txt, face, textOp)
+			index++
+		}
 
 		tickTxt := fmt.Sprintf("Tick: %d", e.Tick)
 		textOp = &text.DrawOptions{}
-		textOp.GeoM.Translate(start, start+step*2)
+		textOp.GeoM.Translate(start, start+step*index)
 		textOp.ColorScale.ScaleWithColor(color.RGBA{R: 0, G: 255, B: 0, A: 255})
 		text.Draw(screen, tickTxt, face, textOp)
 
@@ -648,11 +655,12 @@ func (e *Engine) Update(inp *input.Input) error {
 			e.dialogControl.inputBuffer = e.dialogControl.inputBuffer[:0]
 			return nil
 		}
-		if e.activeNPC.Dialog.State().GaveItem {
+		if e.activeNPC.Dialog.State().GaveItem && e.activeNPC.LinkedItem != nil {
 			e.activeNPC.LinkedItem.MoveTo(e.activeNPC.Origin.Add(&geometry.Vector{
 				X: +64,
 				Y: +32,
 			}))
+			e.activeNPC.LinkedItem = nil
 		}
 
 		pk := inp.JustPressedKeys()
@@ -689,17 +697,19 @@ func (e *Engine) Update(inp *input.Input) error {
 			e.activeArcade = nil
 			return nil
 		}
-		if e.activeArcade.Game.State().Won && e.activeArcade.LinkedItem != nil {
+
+		if result := e.activeArcade.Game.State().Result; result == arcade.ResultWon && e.activeArcade.LinkedItem != nil {
 			e.activeArcade.LinkedItem.MoveTo(e.activeArcade.Origin.Add(&geometry.Vector{
 				X: +64,
 				Y: +32,
 			}))
+			e.activeArcade.LinkedItem = nil
 			return nil
-		}
-		if e.activeArcade.Game.State().Result != arcade.ResultUnknown {
+		} else if result != arcade.ResultUnknown {
 			// No need to feed the game if the result is known.
 			return nil
 		}
+
 		if e.Tick%5 != 0 {
 			return nil
 		}
@@ -924,9 +934,7 @@ func (e *Engine) CheckNPCClose() *npc.NPC {
 
 func (e *Engine) CheckArcadeClose() *arcade.Machine {
 	for _, a := range Collide(e.Player.Rectangle().Extended(40), e.Arcades) {
-		if !a.Game.State().Won {
-			return a
-		}
+		return a
 	}
 
 	return nil

@@ -19,7 +19,6 @@ const (
 )
 
 type State struct {
-	Won    bool
 	Result Result
 	Screen [ScreenSize][ScreenSize]color.Color
 }
