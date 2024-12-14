@@ -52,8 +52,10 @@ var interestingKeys = []ebiten.Key{
 	ebiten.KeyEnter,
 	ebiten.KeyBackspace,
 	ebiten.KeyShiftLeft,
-	ebiten.KeyUp,
-	ebiten.KeyDown,
+	ebiten.KeyArrowUp,
+	ebiten.KeyArrowDown,
+	ebiten.KeyArrowLeft,
+	ebiten.KeyArrowRight,
 }
 
 type Input struct {

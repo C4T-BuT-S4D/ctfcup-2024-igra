@@ -454,6 +454,9 @@ func (e *Engine) drawArcadeState(screen *ebiten.Image) {
 	borderSizePx := 5
 	cameraRectSide := min(camera.WIDTH, camera.HEIGHT)
 	cameraInnerRectSide := cameraRectSide - borderSizePx*2
+	borderSizePx := 10
+	cameraInnerRectSide := (min(camera.WIDTH, camera.HEIGHT) - borderSizePx*2) / arcade.ScreenSize * arcade.ScreenSize
+	cameraRectSide := cameraInnerRectSide + borderSizePx*2
 
 	scaleFactor := cameraInnerRectSide / arcade.ScreenSize
 
@@ -464,8 +467,8 @@ func (e *Engine) drawArcadeState(screen *ebiten.Image) {
 	vector.DrawFilledRect(screen, mgx, mgy, float32(cameraRectSide), float32(cameraRectSide), color.White, false)
 	vector.DrawFilledRect(screen, mgx+borderSizeF, mgy+borderSizeF, arcadeSpace, arcadeSpace, color.Black, false)
 
-	for i := 0; i < len(as.Screen); i++ {
-		for j := 0; j < len(as.Screen[i]); j++ {
+	for i := range arcade.ScreenSize {
+		for j := range arcade.ScreenSize {
 			dy := float32(i * scaleFactor)
 			dx := float32(j * scaleFactor)
 			vector.DrawFilledRect(screen, mgx+dx+borderSizeF, mgy+dy+borderSizeF, float32(scaleFactor), float32(scaleFactor), as.Screen[i][j], false)
