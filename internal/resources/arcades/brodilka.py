@@ -81,14 +81,12 @@ def win():
     out = copy.deepcopy(field)
     out[0][0:3] = b"WON"
     write_output(out)
-    sys.exit(0)
 
 
 def lose():
     out = copy.deepcopy(field)
     out[0][0:4] = b"LOSE"
     write_output(out)
-    sys.exit(0)
 
 
 lost, won = False, False
@@ -109,8 +107,10 @@ while True:
 
     if lost:
         lose()
+        continue
     elif won:
         win()
+        continue
 
     next_player = calc_move(player, delta)
     if next_player != player:
