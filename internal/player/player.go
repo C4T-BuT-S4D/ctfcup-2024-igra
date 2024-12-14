@@ -23,7 +23,7 @@ const (
 )
 
 type Player struct {
-	*object.Object
+	*object.Base
 	*physics.Physical
 
 	animations               map[string][]*ebiten.Image
@@ -57,7 +57,7 @@ func New(origin *geometry.Point, spriteManager *sprites.Manager) (*Player, error
 	}
 
 	return &Player{
-		Object: &object.Object{
+		Base: &object.Base{
 			Origin: origin,
 			Width:  Width,
 			Height: Height,
@@ -107,7 +107,7 @@ func (p *Player) IsDead() bool {
 }
 
 func (p *Player) Type() object.Type {
-	return object.PlayerType
+	return object.Player
 }
 
 func (p *Player) Collect(it *item.Item) {

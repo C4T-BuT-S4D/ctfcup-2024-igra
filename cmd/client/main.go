@@ -199,8 +199,8 @@ func main() {
 		logrus.Fatalf("Failed to create game: %v", err)
 	}
 
-	// ebiten.SetTPS(5)
 	ebiten.SetWindowTitle("ctfcup-2024-igra client")
+	ebiten.SetWindowSize(camera.WIDTH, camera.HEIGHT)
 	ebiten.SetWindowResizingMode(ebiten.WindowResizingModeEnabled)
 
 	if err := ebiten.RunGame(g); err != nil && !errors.Is(err, context.Canceled) {

@@ -5,71 +5,51 @@ import "github.com/c4t-but-s4d/ctfcup-2024-igra/internal/geometry"
 type Type int
 
 const (
-	StaticTileType Type = iota
-	PlayerType
+	BackgroundImage Type = iota
+	StaticTile
+	Player
 	Item
 	Portal
 	Spike
-	InvWall
 	NPC
 	ArcadeMachine
-	BossV1
-	BossV2
 	EnemyBullet
-	BackgroundImage
 	Arcade
 )
 
-func (t Type) String() string {
-	switch t {
-	case StaticTileType:
-		return "StaticTileType"
-	case PlayerType:
-		return "PlayerType"
-	case Item:
-		return "Item"
-	case Portal:
-		return "Portal"
-	case Spike:
-		return "Spike"
-	default:
-		panic("unknown type")
-	}
-}
-
-type Object struct {
+type Base struct {
 	Origin *geometry.Point
 	Width  float64
 	Height float64
 }
 
-func (o *Object) GetOrigin() *geometry.Point {
-	if o == nil {
+func (b *Base) GetOrigin() *geometry.Point {
+	if b == nil {
 		return nil
 	}
-	return o.Origin
+	return b.Origin
 }
 
-func (o *Object) Rectangle() *geometry.Rectangle {
+func (b *Base) Rectangle() *geometry.Rectangle {
 	return &geometry.Rectangle{
-		LeftX:   o.Origin.X,
-		TopY:    o.Origin.Y,
-		RightX:  o.Origin.X + o.Width,
-		BottomY: o.Origin.Y + o.Height,
+		LeftX:   b.Origin.X,
+		TopY:    b.Origin.Y,
+		RightX:  b.Origin.X + b.Width,
+		BottomY: b.Origin.Y + b.Height,
 	}
 }
 
-func (o *Object) Move(d *geometry.Vector) *Object {
-	o.Origin = o.Origin.Add(d)
-	return o
+func (b *Base) Move(d *geometry.Vector) *Base {
+	b.Origin = b.Origin.Add(d)
+	return b
 }
 
-func (o *Object) MoveTo(p *geometry.Point) *Object {
-	o.Origin = p
-	return o
+func (b *Base) MoveTo(p *geometry.Point) *Base {
+	b.Origin = p
+	return b
 }
 
-type GenericObject interface {
+type Generic interface {
 	Rectangle() *geometry.Rectangle
 	Type() Type
 }

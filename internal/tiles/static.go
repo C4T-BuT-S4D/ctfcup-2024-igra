@@ -8,14 +8,14 @@ import (
 )
 
 type StaticTile struct {
-	*object.Object
+	*object.Base
 
 	Image *ebiten.Image
 }
 
 func NewStaticTile(origin *geometry.Point, width, height int, image *ebiten.Image) *StaticTile {
 	return &StaticTile{
-		Object: &object.Object{
+		Base: &object.Base{
 			Origin: origin,
 			Width:  float64(width),
 			Height: float64(height),
@@ -25,5 +25,5 @@ func NewStaticTile(origin *geometry.Point, width, height int, image *ebiten.Imag
 }
 
 func (s *StaticTile) Type() object.Type {
-	return object.StaticTileType
+	return object.StaticTile
 }

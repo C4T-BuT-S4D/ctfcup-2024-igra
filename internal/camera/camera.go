@@ -8,5 +8,5 @@ const (
 )
 
 type Camera struct {
-	*object.Object
+	*object.Base
 }

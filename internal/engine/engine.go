@@ -40,7 +40,6 @@ import (
 	"github.com/c4t-but-s4d/ctfcup-2024-igra/internal/resources"
 	"github.com/c4t-but-s4d/ctfcup-2024-igra/internal/sprites"
 	"github.com/c4t-but-s4d/ctfcup-2024-igra/internal/tiles"
-	"github.com/c4t-but-s4d/ctfcup-2024-igra/internal/wall"
 	gameserverpb "github.com/c4t-but-s4d/ctfcup-2024-igra/proto/go/gameserver"
 
 	// Register png codec.
@@ -69,7 +68,6 @@ type Engine struct {
 	Items            []*item.Item             `json:"items" msgpack:"items"`
 	Portals          []*portal.Portal         `json:"-" msgpack:"portals"`
 	Spikes           []*damage.Spike          `json:"-" msgpack:"spikes"`
-	InvWalls         []*wall.InvWall          `json:"-" msgpack:"invWalls"`
 	NPCs             []*npc.NPC               `json:"-" msgpack:"npcs"`
 	Arcades          []*arcade.Machine        `json:"-" msgpack:"arcades"`
 	EnemyBullets     []*damage.Bullet         `json:"-" msgpack:"enemyBullets"`
@@ -210,11 +208,10 @@ func New(config Config, resourceManager *ResourceManager, dialogProvider dialog.
 	}
 
 	var (
-		items    []*item.Item
-		spikes   []*damage.Spike
-		invwalls []*wall.InvWall
-		npcs     []*npc.NPC
-		arcades  []*arcade.Machine
+		items   []*item.Item
+		spikes  []*damage.Spike
+		npcs    []*npc.NPC
+		arcades []*arcade.Machine
 	)
 	winPoints := make(map[string]*geometry.Point)
 	portalsMap := make(map[string]*portal.Portal)
@@ -263,13 +260,6 @@ func New(config Config, resourceManager *ResourceManager, dialogProvider dialog.
 					o.Width,
 					o.Height,
 				))
-			case "invwall":
-				invwalls = append(invwalls, wall.NewInvWall(&geometry.Point{
-					X: o.X,
-					Y: o.Y,
-				},
-					o.Width,
-					o.Height))
 			case "npc":
 				img := resourceManager.Sprites.GetSprite(sprites.Type(o.Properties.GetString("sprite")))
 				dimg := resourceManager.Sprites.GetSprite(sprites.Type(o.Properties.GetString("dialog-sprite")))
@@ -347,7 +337,7 @@ func New(config Config, resourceManager *ResourceManager, dialogProvider dialog.
 	}
 
 	cam := &camera.Camera{
-		Object: &object.Object{
+		Base: &object.Base{
 			Origin: &geometry.Point{
 				X: 0,
 				Y: 0,
@@ -372,7 +362,6 @@ func New(config Config, resourceManager *ResourceManager, dialogProvider dialog.
 		Items:            items,
 		Portals:          portals,
 		Spikes:           spikes,
-		InvWalls:         invwalls,
 		NPCs:             npcs,
 		Arcades:          arcades,
 		spriteManager:    resourceManager.Sprites,
@@ -524,7 +513,6 @@ func (e *Engine) drawArcadeState(screen *ebiten.Image) {
 }
 
 func (e *Engine) drawNPCDialog(screen *ebiten.Image) {
-
 	// Draw dialog border (outer rectangle).
 	borderw, borderh := camera.WIDTH-camera.WIDTH/8, camera.HEIGHT/2
 	bx, by := float32(camera.WIDTH/16.0), float32(camera.HEIGHT/2.0-camera.HEIGHT/16)
@@ -592,7 +580,7 @@ func (e *Engine) Draw(screen *ebiten.Image) {
 		op := &ebiten.DrawImageOptions{}
 
 		switch c.Type() {
-		case object.PlayerType:
+		case object.Player:
 			if e.Player.LooksRight {
 				op.GeoM.Scale(-1, 1)
 				op.GeoM.Translate(e.Player.Width, 0)
@@ -613,7 +601,7 @@ func (e *Engine) Draw(screen *ebiten.Image) {
 		case object.BackgroundImage:
 			bi := c.(*tiles.BackgroundImage)
 			screen.DrawImage(bi.Image, op)
-		case object.StaticTileType:
+		case object.StaticTile:
 			t := c.(*tiles.StaticTile)
 			screen.DrawImage(t.Image, op)
 		case object.Item:
@@ -622,7 +610,7 @@ func (e *Engine) Draw(screen *ebiten.Image) {
 				continue
 			}
 			screen.DrawImage(it.Image, op)
-		case object.PlayerType:
+		case object.Player:
 			screen.DrawImage(e.Player.Image(), op)
 		case object.Portal:
 			p := c.(*portal.Portal)
@@ -863,11 +851,7 @@ func (e *Engine) ProcessPlayerInput(inp *input.Input) {
 func (e *Engine) AlignPlayerX() {
 	var pv *geometry.Vector
 
-	for _, c := range e.Collisions(e.Player.Rectangle(), object.StaticTileType, object.InvWall) {
-		if c.Type() != object.StaticTileType && c.Type() != object.InvWall {
-			continue
-		}
-
+	for _, c := range e.Collisions(e.Player.Rectangle(), object.StaticTile) {
 		pv = c.Rectangle().PushVectorX(e.Player.Rectangle())
 		break
 	}
@@ -882,7 +866,7 @@ func (e *Engine) AlignPlayerX() {
 func (e *Engine) AlignPlayerY() {
 	var pv *geometry.Vector
 
-	for _, c := range e.Collisions(e.Player.Rectangle(), object.StaticTileType, object.InvWall) {
+	for _, c := range e.Collisions(e.Player.Rectangle(), object.StaticTile) {
 		pv = c.Rectangle().PushVectorY(e.Player.Rectangle())
 		break
 	}
@@ -966,7 +950,7 @@ func (e *Engine) CheckEnemyBullets() {
 		b.Move(b.Direction)
 		ok := true
 		for _, c := range e.Collisions(b.Rectangle()) {
-			if c.Type() == object.StaticTileType {
+			if c.Type() == object.StaticTile {
 				ok = false
 				break
 			}

@@ -8,7 +8,7 @@ import (
 )
 
 type Machine struct {
-	*object.Object
+	*object.Base
 	Game         Game          `msgpack:"-"`
 	Image        *ebiten.Image `msgpack:"-"`
 	LinkedItem   *item.Item    `msgpack:"-"`
@@ -21,7 +21,7 @@ func (m Machine) Type() object.Type {
 
 func New(origin *geometry.Point, img *ebiten.Image, width, height float64, game Game, item string) *Machine {
 	return &Machine{
-		Object: &object.Object{
+		Base: &object.Base{
 			Origin: origin,
 			Width:  width,
 			Height: height,

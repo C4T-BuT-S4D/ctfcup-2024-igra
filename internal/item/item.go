@@ -8,7 +8,7 @@ import (
 )
 
 type Item struct {
-	*object.Object `json:"-"`
+	*object.Base `json:"-"`
 
 	Image *ebiten.Image `json:"-" msgpack:"-"`
 
@@ -19,7 +19,7 @@ type Item struct {
 
 func New(origin *geometry.Point, width, height float64, img *ebiten.Image, name string, important bool) *Item {
 	return &Item{
-		Object: &object.Object{
+		Base: &object.Base{
 			Origin: origin,
 			Width:  width,
 			Height: height,
