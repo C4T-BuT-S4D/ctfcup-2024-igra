@@ -9,9 +9,12 @@ type Provider interface {
 type LocalProvider struct{}
 
 func (sp *LocalProvider) Get(id string) (Game, error) {
-	if id == "brodilka" {
+	switch id {
+	case "brodilka":
 		return newBinaryGame("./internal/resources/arcades/brodilka"), nil
+	case "simple":
+		return newSimpleGame(), nil
+	default:
+		return nil, fmt.Errorf("unknown arcade id: %s", id)
 	}
-
-	return nil, fmt.Errorf("unknown arcade id: %s", id)
 }
