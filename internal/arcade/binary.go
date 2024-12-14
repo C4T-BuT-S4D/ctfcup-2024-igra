@@ -3,7 +3,6 @@ package arcade
 import (
 	"bytes"
 	"encoding/binary"
-	"errors"
 	"fmt"
 	"image/color"
 	"io"
@@ -103,15 +102,12 @@ func (g *binaryGame) Stop() error {
 	}
 
 	// Wait() cleans up the process resources.
-	waitErr := g.cmd.Wait()
-	if waitErr != nil {
-		waitErr = fmt.Errorf("waiting for game to exit: %w", waitErr)
-	}
+	_ = g.cmd.Wait()
 
 	g.cmd = nil
 	g.cleanup()
 
-	return errors.Join(killErr, waitErr)
+	return killErr
 }
 
 func (g *binaryGame) Feed(keys []ebiten.Key) error {

@@ -1,11 +1,23 @@
 #!/usr/bin/env python3
 
+import copy
 import enum
+import random
 import sys
+
+rnd = random.SystemRandom()
 
 SCREEN_SIZE = 64
 field = [[0] * SCREEN_SIZE for _ in range(SCREEN_SIZE)]
 player = (0, 0)
+
+
+def gen_location() -> tuple[int, int]:
+    return (rnd.randint(0, SCREEN_SIZE - 1), rnd.randint(0, SCREEN_SIZE - 1))
+
+
+target = gen_location()
+enemies = [gen_location() for _ in range(32)]
 
 
 class Move(enum.Enum):
@@ -33,12 +45,16 @@ def read_input() -> set[Move]:
     return moves
 
 
-def write_output():
+def write_output(screen: list[list[int]]):
     b = b""
-    for row in field:
+    for row in screen:
         b += bytes(row)
     sys.stdout.buffer.write(b)
     sys.stdout.buffer.flush()
+
+
+def gen_delta() -> tuple[int, int]:
+    return (rnd.randint(-1, 1), rnd.randint(-1, 1))
 
 
 def calc_move(pos: tuple[int, int], delta: tuple[int, int]) -> tuple[int, int]:
@@ -52,6 +68,30 @@ def calc_move(pos: tuple[int, int], delta: tuple[int, int]) -> tuple[int, int]:
         return pos
     return target
 
+
+def is_enemy_hit() -> bool:
+    return any(player == enemy for enemy in enemies)
+
+
+def caught_target() -> bool:
+    return player == target
+
+
+def win():
+    out = copy.deepcopy(field)
+    out[0][0:3] = b"WON"
+    write_output(out)
+    sys.exit(0)
+
+
+def lose():
+    out = copy.deepcopy(field)
+    out[0][0:4] = b"LOSE"
+    write_output(out)
+    sys.exit(0)
+
+
+lost, won = False, False
 
 while True:
     delta = (0, 0)
@@ -67,9 +107,29 @@ while True:
                 d = (0, 1)
         delta = (delta[0] + d[0], delta[1] + d[1])
 
+    if lost:
+        lose()
+    elif won:
+        win()
+
     next_player = calc_move(player, delta)
-    if next_player[0] != player[0] or next_player[1] != player[1]:
+    if next_player != player:
         player = next_player
+        if is_enemy_hit():
+            lost = True
         field[player[0]][player[1]] = (field[player[0]][player[1]] + 1) % 256
 
-    write_output()
+    for i, enemy in enumerate(enemies):
+        enemies[i] = calc_move(enemy, gen_delta())
+    if is_enemy_hit():
+        lost = True
+
+    target = calc_move(target, gen_delta())
+    if caught_target():
+        won = True
+
+    screen = copy.deepcopy(field)
+    screen[target[0]][target[1]] = 118
+    for enemy in enemies:
+        screen[enemy[0]][enemy[1]] = 160
+    write_output(screen)
