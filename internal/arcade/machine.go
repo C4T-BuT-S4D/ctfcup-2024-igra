@@ -15,7 +15,7 @@ type Machine struct {
 	ProvidesItem string
 }
 
-func (m Machine) Type() object.Type {
+func (m *Machine) Type() object.Type {
 	return object.Arcade
 }
 

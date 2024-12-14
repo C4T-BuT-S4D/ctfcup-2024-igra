@@ -5,75 +5,39 @@ import (
 
 	"github.com/c4t-but-s4d/ctfcup-2024-igra/internal/geometry"
 	"github.com/c4t-but-s4d/ctfcup-2024-igra/internal/object"
+	"github.com/c4t-but-s4d/ctfcup-2024-igra/internal/player"
 )
+
+func collide[T object.Generic](result []object.Generic, r *geometry.Rectangle, objects []T, filter []object.Type) []object.Generic {
+	var t T
+	if len(filter) > 0 && !slices.Contains(filter, t.Type()) {
+		return result
+	}
+
+	for _, o := range objects {
+		if o.Rectangle().Intersects(r) {
+			result = append(result, o)
+		}
+	}
+
+	return result
+}
 
 func (e *Engine) Collisions(r *geometry.Rectangle, filter ...object.Type) []object.Generic {
 	var result []object.Generic
 
-	// Background image should be rendered first.
-	for _, bg := range e.BackgroundImages {
-		if bg.Rectangle().Intersects(r) {
-			result = append(result, bg)
-		}
-	}
+	// Collision order is important for rendering:
+	// - Background is rendered first
+	// - Player is rendered on top of everything except bullets
+	result = collide(result, r, e.BackgroundImages, filter)
+	result = collide(result, r, e.Tiles, filter)
+	result = collide(result, r, e.Items, filter)
+	result = collide(result, r, e.Portals, filter)
+	result = collide(result, r, e.Spikes, filter)
+	result = collide(result, r, e.NPCs, filter)
+	result = collide(result, r, e.Arcades, filter)
+	result = collide(result, r, []*player.Player{e.Player}, filter)
+	result = collide(result, r, e.EnemyBullets, filter)
 
-	for _, t := range e.Tiles {
-		if t.Rectangle().Intersects(r) {
-			result = append(result, t)
-		}
-	}
-
-	for _, t := range e.Items {
-		if t.Rectangle().Intersects(r) {
-			result = append(result, t)
-		}
-	}
-
-	for _, t := range e.Portals {
-		if t.Rectangle().Intersects(r) {
-			result = append(result, t)
-		}
-	}
-
-	for _, t := range e.Spikes {
-		if t.Rectangle().Intersects(r) {
-			result = append(result, t)
-		}
-	}
-
-	for _, t := range e.NPCs {
-		if t.Rectangle().Intersects(r) {
-			result = append(result, t)
-		}
-	}
-
-	for _, t := range e.Arcades {
-		if t.Rectangle().Intersects(r) {
-			result = append(result, t)
-		}
-	}
-
-	// Render player on top of everything except bullets.
-	if e.Player.Rectangle().Intersects(r) {
-		result = append(result, e.Player)
-	}
-
-	for _, t := range e.EnemyBullets {
-		if t.Rectangle().Intersects(r) {
-			result = append(result, t)
-		}
-	}
-
-	if len(filter) == 0 {
-		return result
-	}
-
-	var filtered []object.Generic
-	for _, o := range result {
-		if slices.Contains(filter, o.Type()) {
-			filtered = append(filtered, o)
-		}
-	}
-
-	return filtered
+	return result
 }
