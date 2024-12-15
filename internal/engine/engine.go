@@ -80,6 +80,7 @@ type Engine struct {
 	activeNPC      *npc.NPC
 	activeArcade   *arcade.Machine
 	dialogControl  dialogControl
+	slowMode       bool
 
 	Muted    bool   `json:"-" msgpack:"-"`
 	Paused   bool   `json:"-" msgpack:"paused"`
@@ -421,7 +422,6 @@ func (e *Engine) Reset() {
 	e.activeArcade = nil
 	e.EnemyBullets = nil
 	e.Tick = 0
-	e.Player.ResetCoyote()
 }
 
 func (e *Engine) MakeSnapshot() (*Snapshot, error) {
@@ -641,6 +641,15 @@ func (e *Engine) Draw(screen *ebiten.Image) {
 		textOp.GeoM.Translate(start, start+step*index)
 		textOp.ColorScale.ScaleWithColor(color.RGBA{R: 0, G: 255, B: 0, A: 255})
 		text.Draw(screen, tickTxt, face, textOp)
+		index++
+
+		if e.slowMode {
+			onGroundText := fmt.Sprintf("OnGround: %v %v", e.Player.OnGround(), e.Player.OnGroundCoyote())
+			textOp = &text.DrawOptions{}
+			textOp.GeoM.Translate(start, start+step*index)
+			textOp.ColorScale.ScaleWithColor(color.RGBA{R: 0, G: 255, B: 0, A: 255})
+			text.Draw(screen, onGroundText, face, textOp)
+		}
 
 		for i, it := range e.Player.Inventory.Items {
 			itemX := e.Camera.Width - float64(i+1)*72
@@ -774,6 +783,14 @@ func (e *Engine) Update(inp *input.Input) error {
 	} else if inp.IsKeyNewlyPressed(ebiten.KeyP) {
 		e.Paused = true
 		e.Player.Speed = &geometry.Vector{}
+	}
+	if inp.IsKeyNewlyPressed(ebiten.KeyC) {
+		e.slowMode = !e.slowMode
+		if e.slowMode {
+			ebiten.SetTPS(3)
+		} else {
+			ebiten.SetTPS(60)
+		}
 	}
 
 	if inp.IsKeyNewlyPressed(ebiten.KeyR) {
