@@ -907,10 +907,6 @@ func (e *Engine) AlignPlayerY() {
 		return
 	}
 
-	if pv.Y != 0 {
-		fmt.Println("Y collision on tick", e.Tick, "pv.Y", pv.Y)
-	}
-
 	if pv.Y <= 0 {
 		// Zero can only be on ground since we extended only BottomY.
 		e.Player.SetOnGround(collision, e.Tick)
