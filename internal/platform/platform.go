@@ -77,10 +77,10 @@ func (p *Platform) move() {
 
 	next := cur + float64(speed)
 	switch {
-	case speed > 0 && next > p.end:
+	case speed > 0 && next >= p.end:
 		p.nextAcceleration = p.Speed.Neg().Multiply(2)
 		next = p.end
-	case speed < 0 && next < p.start:
+	case speed < 0 && next <= p.start:
 		p.nextAcceleration = p.Speed.Neg().Multiply(2)
 		next = p.start
 	}

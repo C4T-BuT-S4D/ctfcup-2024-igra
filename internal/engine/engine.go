@@ -858,7 +858,7 @@ func (e *Engine) ProcessPlatformsX() {
 	}
 
 	if p, ok := e.Player.OnGround().(*platform.Platform); ok {
-		e.Player.Acceleration.X += p.Acceleration.X
+		e.Player.Origin.X += p.Speed.X
 	}
 }
 

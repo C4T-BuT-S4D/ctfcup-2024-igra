@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<map version="1.10" tiledversion="1.11.0" orientation="orthogonal" renderorder="right-down" width="400" height="300" tilewidth="32" tileheight="32" infinite="0" nextlayerid="10" nextobjectid="180">
+<map version="1.10" tiledversion="1.11.0" orientation="orthogonal" renderorder="right-down" width="400" height="300" tilewidth="32" tileheight="32" infinite="0" nextlayerid="10" nextobjectid="181">
  <properties>
   <property name="background" value="bg"/>
  </properties>
@@ -679,7 +679,14 @@
     <property name="sprite" value="puc"/>
    </properties>
   </object>
-  <object id="179" name="plat4m-vert" type="platform" x="992" y="1056" width="64" height="11">
+  <object id="179" name="platform-2" type="platform" x="1120" y="1056" width="64" height="11">
+   <properties>
+    <property name="distance" type="int" value="160"/>
+    <property name="path" value="horizontal"/>
+    <property name="speed" type="int" value="2"/>
+   </properties>
+  </object>
+  <object id="180" name="platform-1" type="platform" x="991.574" y="1055.83" width="64" height="11">
    <properties>
     <property name="distance" type="int" value="320"/>
     <property name="path" value="vertical"/>
