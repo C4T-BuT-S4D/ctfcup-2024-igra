@@ -771,7 +771,6 @@ func (e *Engine) Update(inp *input.Input) error {
 		}
 	} else if inp.IsKeyNewlyPressed(ebiten.KeyP) {
 		e.Paused = true
-		e.Player.Speed = geometry.Vector{}
 	}
 
 	if inp.IsKeyNewlyPressed(ebiten.KeyR) {
