@@ -9,9 +9,18 @@ type Physical struct {
 
 const GravityAcceleration = 1.0 * 2.0 / 6.0
 
-func (o *Physical) ApplyAcceleration() *Physical {
-	o.Speed = o.Speed.Add(o.Acceleration)
+func (o *Physical) ApplyAccelerationX() *Physical {
+	o.Speed.X += o.Acceleration.X
 	return o
+}
+
+func (o *Physical) ApplyAccelerationY() *Physical {
+	o.Speed.Y += o.Acceleration.Y
+	return o
+}
+
+func (o *Physical) SpeedVec() *geometry.Vector {
+	return o.Speed
 }
 
 func NewPhysical() *Physical {
@@ -19,4 +28,8 @@ func NewPhysical() *Physical {
 		Speed:        &geometry.Vector{},
 		Acceleration: &geometry.Vector{},
 	}
+}
+
+type Moving interface {
+	SpeedVec() *geometry.Vector
 }

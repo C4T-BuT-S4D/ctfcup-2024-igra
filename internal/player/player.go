@@ -36,7 +36,8 @@ type Player struct {
 	LooksRight bool
 	Health     int
 
-	onGround       bool
+	prevGround     object.Collidable
+	onGround       object.Collidable
 	onGroundCoyote bool
 	coyoteTick     int
 }
@@ -69,14 +70,15 @@ func New(origin *geometry.Point, spriteBundle *resources.SpriteBundle) (*Player,
 	}, nil
 }
 
-func (p *Player) SetOnGround(onGround bool, tick int) {
-	if onGround {
+func (p *Player) SetOnGround(ground object.Collidable, tick int) {
+	p.prevGround = p.onGround
+	if ground != nil {
 		p.coyoteTick = 0
-		p.onGround = true
+		p.onGround = ground
 		p.onGroundCoyote = true
 		return
 	}
-	p.onGround = false
+	p.onGround = ground
 	if !p.onGroundCoyote {
 		return
 	}
@@ -89,8 +91,12 @@ func (p *Player) SetOnGround(onGround bool, tick int) {
 	}
 }
 
-func (p *Player) OnGround() bool {
+func (p *Player) OnGround() object.Collidable {
 	return p.onGround
+}
+
+func (p *Player) PrevGround() object.Collidable {
+	return p.prevGround
 }
 
 func (p *Player) OnGroundCoyote() bool {

@@ -33,6 +33,7 @@ import (
 	"github.com/c4t-but-s4d/ctfcup-2024-igra/internal/npc"
 	"github.com/c4t-but-s4d/ctfcup-2024-igra/internal/object"
 	"github.com/c4t-but-s4d/ctfcup-2024-igra/internal/physics"
+	"github.com/c4t-but-s4d/ctfcup-2024-igra/internal/platform"
 	"github.com/c4t-but-s4d/ctfcup-2024-igra/internal/player"
 	"github.com/c4t-but-s4d/ctfcup-2024-igra/internal/portal"
 	"github.com/c4t-but-s4d/ctfcup-2024-igra/internal/resources"
@@ -65,6 +66,7 @@ type Engine struct {
 	Items            []*item.Item             `json:"items" msgpack:"items"`
 	Portals          []*portal.Portal         `json:"-" msgpack:"portals"`
 	Spikes           []*damage.Spike          `json:"-" msgpack:"spikes"`
+	Platforms        []*platform.Platform     `json:"-" msgpack:"platforms"`
 	NPCs             []*npc.NPC               `json:"-" msgpack:"npcs"`
 	Arcades          []*arcade.Machine        `json:"-" msgpack:"arcades"`
 	EnemyBullets     []*damage.Bullet         `json:"-" msgpack:"enemyBullets"`
@@ -187,10 +189,11 @@ func New(config Config, resourceBundle *resources.Bundle, dialogProvider dialog.
 	}
 
 	var (
-		items   []*item.Item
-		spikes  []*damage.Spike
-		npcs    []*npc.NPC
-		arcades []*arcade.Machine
+		items     []*item.Item
+		spikes    []*damage.Spike
+		platforms []*platform.Platform
+		npcs      []*npc.NPC
+		arcades   []*arcade.Machine
 	)
 	winPoints := make(map[string]*geometry.Point)
 	portalsMap := make(map[string]*portal.Portal)
@@ -238,6 +241,26 @@ func New(config Config, resourceBundle *resources.Bundle, dialogProvider dialog.
 					resourceBundle.GetSprite(resources.SpriteSpike),
 					o.Width,
 					o.Height,
+				))
+			case "platform":
+				var path platform.PlatformPath
+				if o.Properties.GetString("path") == "vertical" {
+					path = platform.PathVertical
+				} else {
+					path = platform.PathHorizontal
+				}
+
+				platforms = append(platforms, platform.New(
+					&geometry.Point{
+						X: o.X,
+						Y: o.Y,
+					},
+					int(o.Width),
+					int(o.Height),
+					resourceBundle.GetSprite(resources.SpritePlatform),
+					path,
+					o.Properties.GetInt("distance"),
+					o.Properties.GetInt("speed"),
 				))
 			case "npc":
 				img := resourceBundle.GetSprite(resources.SpriteType(o.Properties.GetString("sprite")))
@@ -339,6 +362,7 @@ func New(config Config, resourceBundle *resources.Bundle, dialogProvider dialog.
 		Items:            items,
 		Portals:          portals,
 		Spikes:           spikes,
+		Platforms:        platforms,
 		NPCs:             npcs,
 		Arcades:          arcades,
 		resourceBundle:   resourceBundle,
@@ -769,10 +793,17 @@ func (e *Engine) Update(inp *input.Input) error {
 	}
 
 	e.ProcessPlayerInput(inp)
+
+	e.ProcessPlatformsX()
+	e.Player.ApplyAccelerationX()
 	e.Player.Move(&geometry.Vector{X: e.Player.Speed.X, Y: 0})
 	e.AlignPlayerX()
+
+	e.ProcessPlatformsY()
+	e.Player.ApplyAccelerationY()
 	e.Player.Move(&geometry.Vector{X: 0, Y: e.Player.Speed.Y})
 	e.AlignPlayerY()
+
 	e.CheckPortals()
 	e.CheckSpikes()
 	e.CheckEnemyBullets()
@@ -804,12 +835,6 @@ func (e *Engine) Update(inp *input.Input) error {
 }
 
 func (e *Engine) ProcessPlayerInput(inp *input.Input) {
-	if e.Player.OnGround() {
-		e.Player.Acceleration.Y = 0
-	} else {
-		e.Player.Acceleration.Y = physics.GravityAcceleration
-	}
-
 	if (inp.IsKeyPressed(ebiten.KeySpace) || inp.IsKeyPressed(ebiten.KeyW)) && e.Player.OnGroundCoyote() {
 		e.Player.Speed.Y = -5 * 2
 		e.Player.ResetCoyote()
@@ -825,15 +850,33 @@ func (e *Engine) ProcessPlayerInput(inp *input.Input) {
 	default:
 		e.Player.Speed.X = 0
 	}
+}
 
-	e.Player.ApplyAcceleration()
+func (e *Engine) ProcessPlatformsX() {
+	for _, p := range e.Platforms {
+		p.MoveX()
+	}
+
+	if p, ok := e.Player.OnGround().(*platform.Platform); ok {
+		e.Player.Acceleration.X += p.Acceleration.X
+	}
+}
+
+func (e *Engine) ProcessPlatformsY() {
+	for _, p := range e.Platforms {
+		p.MoveY()
+	}
+
+	if p, ok := e.Player.OnGround().(*platform.Platform); ok {
+		e.Player.Acceleration.Y += p.Acceleration.Y
+	}
 }
 
 func (e *Engine) AlignPlayerX() {
 	var pv *geometry.Vector
 
-	for _, c := range Collide(e.Player.Rectangle(), e.Tiles) {
-		pv = c.Rectangle().PushVectorX(e.Player.Rectangle())
+	for t := range Collide2(e.Player.Rectangle(), e.Tiles, e.Platforms) {
+		pv = t.Rectangle().PushVectorX(e.Player.Rectangle())
 		break
 	}
 
@@ -846,32 +889,49 @@ func (e *Engine) AlignPlayerX() {
 
 func (e *Engine) AlignPlayerY() {
 	var pv *geometry.Vector
+	var collision object.Collidable
 
 	extendedRect := e.Player.Rectangle()
 	extendedRect.BottomY += 1e-12
 
-	for _, t := range Collide(extendedRect, e.Tiles) {
+	for t := range Collide2(extendedRect, e.Tiles, e.Platforms) {
 		pv = t.Rectangle().PushVectorY(e.Player.Rectangle())
+		collision = t
 		break
 	}
 
 	if pv == nil {
-		e.Player.SetOnGround(false, e.Tick)
-		return
-	} else if *pv == (geometry.Vector{}) {
-		e.Player.SetOnGround(true, e.Tick)
+		// No collision -> in the air.
+		e.Player.SetOnGround(nil, e.Tick)
+		e.Player.Acceleration.Y = physics.GravityAcceleration
 		return
 	}
 
+	if pv.Y <= 0 {
+		// Zero can only be on ground since we extended only BottomY.
+		e.Player.SetOnGround(collision, e.Tick)
+		e.Player.Acceleration.Y = 0
+	} else {
+		// Collision with top -> in the air.
+		e.Player.SetOnGround(nil, e.Tick)
+		e.Player.Acceleration.Y = physics.GravityAcceleration
+	}
+
 	e.Player.Move(pv)
-	e.Player.SetOnGround(pv.Y < 0, e.Tick)
-	e.Player.Speed.Y = 0
+
+	if collision != e.Player.PrevGround() {
+		// Negative force when we hit a new ground.
+		e.Player.Speed.Y = 0
+		if moving, ok := collision.(physics.Moving); ok {
+			e.Player.Acceleration.Y += moving.SpeedVec().Y
+		}
+	}
 }
 
 func (e *Engine) CollectItems() error {
 	collectedSomething := false
 
-	for _, it := range Collide(e.Player.Rectangle(), e.Items) {
+	for it := range Collide(e.Player.Rectangle(), e.Items) {
 		if it.Collected {
 			continue
 		}
@@ -896,7 +956,7 @@ func (e *Engine) CollectItems() error {
 }
 
 func (e *Engine) CheckPortals() {
-	for _, p := range Collide(e.Player.Rectangle(), e.Portals) {
+	for p := range Collide(e.Player.Rectangle(), e.Portals) {
 		if p.TeleportTo == nil {
 			continue
 		}
@@ -917,7 +977,7 @@ func (e *Engine) CheckPortals() {
 }
 
 func (e *Engine) CheckSpikes() {
-	for _, s := range Collide(e.Player.Rectangle(), e.Spikes) {
+	for s := range Collide(e.Player.Rectangle(), e.Spikes) {
 		e.Player.Health -= s.Damage
 	}
 }
@@ -928,14 +988,19 @@ func (e *Engine) CheckEnemyBullets() {
 	for _, b := range e.EnemyBullets {
 		b.Move(b.Direction)
 
-		if len(Collide(b.Rectangle(), e.Tiles)) == 0 {
+		ok := true
+		for range Collide2(b.Rectangle(), e.Tiles, e.Platforms) {
+			ok = false
+			break
+		}
+		if ok {
 			bullets = append(bullets, b)
 		}
 	}
 
 	e.EnemyBullets = bullets
 
-	for _, b := range Collide(e.Player.Rectangle(), e.EnemyBullets) {
+	for b := range Collide(e.Player.Rectangle(), e.EnemyBullets) {
 		if b.Triggered {
 			continue
 		}
@@ -946,7 +1011,7 @@ func (e *Engine) CheckEnemyBullets() {
 }
 
 func (e *Engine) CheckNPCClose() *npc.NPC {
-	for _, n := range Collide(e.Player.Rectangle().Extended(40), e.NPCs) {
+	for n := range Collide(e.Player.Rectangle().Extended(40), e.NPCs) {
 		if !n.Dialog.State().Finished {
 			return n
 		}
@@ -956,7 +1021,7 @@ func (e *Engine) CheckNPCClose() *npc.NPC {
 }
 
 func (e *Engine) CheckArcadeClose() *arcade.Machine {
-	for _, a := range Collide(e.Player.Rectangle().Extended(40), e.Arcades) {
+	for a := range Collide(e.Player.Rectangle().Extended(40), e.Arcades) {
 		return a
 	}
 
