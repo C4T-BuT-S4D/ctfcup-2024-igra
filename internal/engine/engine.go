@@ -221,12 +221,17 @@ func New(config Config, resourceBundle *resources.Bundle, dialogProvider dialog.
 					o.Properties.GetBool("important"),
 				))
 			case "portal":
+				s := resources.SpritePortal
+				if sprite := o.Properties.GetString("sprite"); sprite != "" {
+					s = resources.SpriteType(sprite)
+				}
+
 				portalsMap[o.Name] = portal.New(
 					&geometry.Point{
 						X: o.X,
 						Y: o.Y,
 					},
-					resourceBundle.GetSprite(resources.SpritePortal),
+					resourceBundle.GetSprite(s),
 					o.Width,
 					o.Height,
 					o.Properties.GetString("portal-to"),
@@ -421,7 +426,6 @@ func (e *Engine) Reset() {
 	e.activeArcade = nil
 	e.EnemyBullets = nil
 	e.Tick = 0
-	e.Player.ResetCoyote()
 }
 
 func (e *Engine) MakeSnapshot() (*Snapshot, error) {
