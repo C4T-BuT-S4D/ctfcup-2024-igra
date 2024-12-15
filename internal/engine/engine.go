@@ -397,6 +397,7 @@ func (e *Engine) Reset() {
 	e.activeArcade = nil
 	e.EnemyBullets = nil
 	e.Tick = 0
+	e.Player.ResetCoyote()
 }
 
 func (e *Engine) MakeSnapshot() (*Snapshot, error) {
