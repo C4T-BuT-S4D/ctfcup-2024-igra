@@ -20,13 +20,13 @@ type Platform struct {
 	// Used to delay acceleration by 1 tick since the speed changes on the next tick
 	// after the platform reaches the end of the path,
 	// so its acceleration should be observable only on the next tick, too.
-	nextAcceleration *geometry.Vector
+	nextAcceleration geometry.Vector
 	start            float64
 	end              float64
 	Path             PlatformPath
 }
 
-func New(origin *geometry.Point, width, height int, image *ebiten.Image, path PlatformPath, distance, speed int) *Platform {
+func New(origin geometry.Point, width, height int, image *ebiten.Image, path PlatformPath, distance, speed int) *Platform {
 	start := origin.X
 	speedVector := geometry.Vector{X: float64(speed), Y: 0}
 	if path == PathVertical {
@@ -38,8 +38,8 @@ func New(origin *geometry.Point, width, height int, image *ebiten.Image, path Pl
 
 	return &Platform{
 		Rendered:         object.NewRendered(origin, image, float64(width), float64(height)),
-		Physical:         &physics.Physical{Speed: &speedVector, Acceleration: &geometry.Vector{}},
-		nextAcceleration: &geometry.Vector{},
+		Physical:         &physics.Physical{Speed: speedVector, Acceleration: geometry.Vector{}},
+		nextAcceleration: geometry.Vector{},
 		start:            start,
 		end:              end,
 		Path:             path,

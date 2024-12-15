@@ -15,11 +15,11 @@ const (
 type Bullet struct {
 	*object.Rendered
 	Damageable `msgpack:"-"`
-	Direction  *geometry.Vector
+	Direction  geometry.Vector
 	Triggered  bool
 }
 
-func NewBullet(origin *geometry.Point, img *ebiten.Image, damage int, direction *geometry.Vector) *Bullet {
+func NewBullet(origin geometry.Point, img *ebiten.Image, damage int, direction geometry.Vector) *Bullet {
 	return &Bullet{
 		Rendered:   object.NewRendered(origin, img, BulletWidth, BulletHeight),
 		Damageable: NewDamageable(damage),

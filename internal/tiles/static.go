@@ -11,7 +11,7 @@ type StaticTile struct {
 	*object.Rendered
 }
 
-func NewStaticTile(origin *geometry.Point, width, height int, image *ebiten.Image) *StaticTile {
+func NewStaticTile(origin geometry.Point, width, height int, image *ebiten.Image) *StaticTile {
 	return &StaticTile{
 		Rendered: object.NewRendered(origin, image, float64(width), float64(height)),
 	}

@@ -14,7 +14,7 @@ type Machine struct {
 	ProvidesItem string
 }
 
-func New(origin *geometry.Point, img *ebiten.Image, width, height float64, game Game, item string) *Machine {
+func New(origin geometry.Point, img *ebiten.Image, width, height float64, game Game, item string) *Machine {
 	return &Machine{
 		Rendered:     object.NewRendered(origin, img, width, height),
 		ProvidesItem: item,

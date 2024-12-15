@@ -6,16 +6,9 @@ import (
 )
 
 type Base struct {
-	Origin *geometry.Point
+	Origin geometry.Point
 	Width  float64
 	Height float64
-}
-
-func (b *Base) GetOrigin() *geometry.Point {
-	if b == nil {
-		return nil
-	}
-	return b.Origin
 }
 
 func (b *Base) Rectangle() *geometry.Rectangle {
@@ -27,12 +20,12 @@ func (b *Base) Rectangle() *geometry.Rectangle {
 	}
 }
 
-func (b *Base) Move(d *geometry.Vector) *Base {
+func (b *Base) Move(d geometry.Vector) *Base {
 	b.Origin = b.Origin.Add(d)
 	return b
 }
 
-func (b *Base) MoveTo(p *geometry.Point) *Base {
+func (b *Base) MoveTo(p geometry.Point) *Base {
 	b.Origin = p
 	return b
 }
@@ -42,7 +35,7 @@ type Rendered struct {
 	StaticImage *ebiten.Image `msgpack:"-"`
 }
 
-func NewRendered(origin *geometry.Point, img *ebiten.Image, width, height float64) *Rendered {
+func NewRendered(origin geometry.Point, img *ebiten.Image, width, height float64) *Rendered {
 	return &Rendered{
 		Base: &Base{
 			Origin: origin,

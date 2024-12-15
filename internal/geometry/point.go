@@ -7,6 +7,6 @@ type Point struct {
 	Y float64
 }
 
-func (p *Point) Add(v *Vector) *Point {
-	return &Point{X: p.X + v.X, Y: p.Y + v.Y}
+func (p Point) Add(v Vector) Point {
+	return Point{X: p.X + v.X, Y: p.Y + v.Y}
 }
