@@ -10,15 +10,14 @@ import (
 type Portal struct {
 	*object.Rendered
 	PortalTo   string
-	TeleportTo *geometry.Point
+	TeleportTo geometry.Point
 	Boss       string
 }
 
-func New(origin *geometry.Point, img *ebiten.Image, width, height float64, portalTo string, teleportTo *geometry.Point, boss string) *Portal {
+func New(origin geometry.Point, img *ebiten.Image, width, height float64, portalTo string, boss string) *Portal {
 	return &Portal{
-		Rendered:   object.NewRendered(origin, img, width, height),
-		PortalTo:   portalTo,
-		TeleportTo: teleportTo,
-		Boss:       boss,
+		Rendered: object.NewRendered(origin, img, width, height),
+		PortalTo: portalTo,
+		Boss:     boss,
 	}
 }

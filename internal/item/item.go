@@ -15,7 +15,7 @@ type Item struct {
 	Collected bool   `json:"collected"`
 }
 
-func New(origin *geometry.Point, width, height float64, img *ebiten.Image, name string, important bool) *Item {
+func New(origin geometry.Point, width, height float64, img *ebiten.Image, name string, important bool) *Item {
 	return &Item{
 		Rendered:  object.NewRendered(origin, img, width, height),
 		Name:      name,

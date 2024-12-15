@@ -12,7 +12,7 @@ type Spike struct {
 	Damageable
 }
 
-func NewSpike(origin *geometry.Point, img *ebiten.Image, width, height float64) *Spike {
+func NewSpike(origin geometry.Point, img *ebiten.Image, width, height float64) *Spike {
 	return &Spike{
 		Rendered:   object.NewRendered(origin, img, width, height),
 		Damageable: NewDamageable(100),

@@ -76,7 +76,7 @@ type Engine struct {
 
 	resourceBundle *resources.Bundle
 	snapshotsDir   string
-	playerSpawn    *geometry.Point
+	playerSpawn    geometry.Point
 	activeNPC      *npc.NPC
 	activeArcade   *arcade.Machine
 	dialogControl  dialogControl
@@ -91,11 +91,11 @@ type Engine struct {
 
 var ErrNoPlayerSpawn = errors.New("no player spawn found")
 
-func findPlayerSpawn(tileMap *tiled.Map) (*geometry.Point, error) {
+func findPlayerSpawn(tileMap *tiled.Map) (geometry.Point, error) {
 	for _, og := range tileMap.ObjectGroups {
 		for _, o := range og.Objects {
 			if o.Type == "player_spawn" {
-				return &geometry.Point{
+				return geometry.Point{
 					X: o.X,
 					Y: o.Y,
 				}, nil
@@ -103,7 +103,7 @@ func findPlayerSpawn(tileMap *tiled.Map) (*geometry.Point, error) {
 		}
 	}
 
-	return nil, ErrNoPlayerSpawn
+	return geometry.Point{}, ErrNoPlayerSpawn
 }
 
 func New(config Config, resourceBundle *resources.Bundle, dialogProvider dialog.Provider, arcadeProvider arcade.Provider) (*Engine, error) {
@@ -123,30 +123,28 @@ func New(config Config, resourceBundle *resources.Bundle, dialogProvider dialog.
 
 	for _, l := range tmap.Layers {
 		collisions := l.Properties.GetBool("collisions")
-		for x := 0; x < tmap.Width; x++ {
-			for y := 0; y < tmap.Height; y++ {
+		for y := range tmap.Height {
+			for x := range tmap.Width {
 				dt := l.Tiles[y*tmap.Width+x]
 				if dt.IsNil() {
 					continue
 				}
 
-				spriteRect := dt.Tileset.GetTileRect(dt.ID)
-
 				if dt.Tileset.Image == nil {
 					return nil, fmt.Errorf("tileset image is empty")
 				}
 
+				spriteRect := dt.Tileset.GetTileRect(dt.ID)
 				tilesImage := resourceBundle.GetTile(dt.Tileset.Image.Source)
 				tileImage := tilesImage.SubImage(spriteRect).(*ebiten.Image)
 
-				w, h := tmap.TileWidth, tmap.TileHeight
 				tile := tiles.NewStaticTile(
-					&geometry.Point{
-						X: float64(x * w),
-						Y: float64(y * h),
+					geometry.Point{
+						X: float64(x * tmap.TileWidth),
+						Y: float64(y * tmap.TileHeight),
 					},
-					w,
-					h,
+					tmap.TileWidth,
+					tmap.TileHeight,
 					tileImage,
 				)
 
@@ -168,7 +166,7 @@ func New(config Config, resourceBundle *resources.Bundle, dialogProvider dialog.
 		bgImage := resourceBundle.GetTile(path.Base(l.Image.Source))
 		bgImages = append(bgImages, &tiles.BackgroundImage{
 			StaticTile: *tiles.NewStaticTile(
-				&geometry.Point{
+				geometry.Point{
 					X: float64(l.OffsetX),
 					Y: float64(l.OffsetY),
 				},
@@ -210,7 +208,7 @@ func New(config Config, resourceBundle *resources.Bundle, dialogProvider dialog.
 				}
 
 				items = append(items, item.New(
-					&geometry.Point{
+					geometry.Point{
 						X: o.X,
 						Y: o.Y,
 					},
@@ -222,7 +220,7 @@ func New(config Config, resourceBundle *resources.Bundle, dialogProvider dialog.
 				))
 			case "portal":
 				portalsMap[o.Name] = portal.New(
-					&geometry.Point{
+					geometry.Point{
 						X: o.X,
 						Y: o.Y,
 					},
@@ -230,11 +228,11 @@ func New(config Config, resourceBundle *resources.Bundle, dialogProvider dialog.
 					o.Width,
 					o.Height,
 					o.Properties.GetString("portal-to"),
-					nil,
-					o.Properties.GetString("boss"))
+					o.Properties.GetString("boss"),
+				)
 			case "spike":
 				spikes = append(spikes, damage.NewSpike(
-					&geometry.Point{
+					geometry.Point{
 						X: o.X,
 						Y: o.Y,
 					},
@@ -251,7 +249,7 @@ func New(config Config, resourceBundle *resources.Bundle, dialogProvider dialog.
 				}
 
 				platforms = append(platforms, platform.New(
-					&geometry.Point{
+					geometry.Point{
 						X: o.X,
 						Y: o.Y,
 					},
@@ -270,7 +268,7 @@ func New(config Config, resourceBundle *resources.Bundle, dialogProvider dialog.
 					return nil, fmt.Errorf("getting '%s' dialog: %w", o.Name, err)
 				}
 				npcs = append(npcs, npc.New(
-					&geometry.Point{
+					geometry.Point{
 						X: o.X,
 						Y: o.Y,
 					},
@@ -290,7 +288,7 @@ func New(config Config, resourceBundle *resources.Bundle, dialogProvider dialog.
 					return nil, fmt.Errorf("getting '%s' arcade: %w", o.Name, err)
 				}
 				arcades = append(arcades, arcade.New(
-					&geometry.Point{
+					geometry.Point{
 						X: o.X,
 						Y: o.Y,
 					},
@@ -338,7 +336,7 @@ func New(config Config, resourceBundle *resources.Bundle, dialogProvider dialog.
 
 	cam := &camera.Camera{
 		Base: &object.Base{
-			Origin: &geometry.Point{
+			Origin: geometry.Point{
 				X: 0,
 				Y: 0,
 			},
@@ -692,7 +690,7 @@ func (e *Engine) Update(inp *input.Input) error {
 			return nil
 		}
 		if e.activeNPC.Dialog.State().GaveItem && e.activeNPC.LinkedItem != nil {
-			e.activeNPC.LinkedItem.MoveTo(e.activeNPC.Origin.Add(&geometry.Vector{
+			e.activeNPC.LinkedItem.MoveTo(e.activeNPC.Origin.Add(geometry.Vector{
 				X: +64,
 				Y: +32,
 			}))
@@ -745,7 +743,7 @@ func (e *Engine) Update(inp *input.Input) error {
 		}
 
 		if result := e.activeArcade.Game.State().Result; result == arcade.ResultWon && e.activeArcade.LinkedItem != nil {
-			e.activeArcade.LinkedItem.MoveTo(e.activeArcade.Origin.Add(&geometry.Vector{
+			e.activeArcade.LinkedItem.MoveTo(e.activeArcade.Origin.Add(geometry.Vector{
 				X: +64,
 				Y: +32,
 			}))
@@ -773,7 +771,7 @@ func (e *Engine) Update(inp *input.Input) error {
 		}
 	} else if inp.IsKeyNewlyPressed(ebiten.KeyP) {
 		e.Paused = true
-		e.Player.Speed = &geometry.Vector{}
+		e.Player.Speed = geometry.Vector{}
 	}
 
 	if inp.IsKeyNewlyPressed(ebiten.KeyR) {
@@ -796,12 +794,12 @@ func (e *Engine) Update(inp *input.Input) error {
 
 	e.ProcessPlatformsX()
 	e.Player.ApplyAccelerationX()
-	e.Player.Move(&geometry.Vector{X: e.Player.Speed.X, Y: 0})
+	e.Player.Move(geometry.Vector{X: e.Player.Speed.X, Y: 0})
 	e.AlignPlayerX()
 
 	e.ProcessPlatformsY()
 	e.Player.ApplyAccelerationY()
-	e.Player.Move(&geometry.Vector{X: 0, Y: e.Player.Speed.Y})
+	e.Player.Move(geometry.Vector{X: 0, Y: e.Player.Speed.Y})
 	e.AlignPlayerY()
 
 	e.CheckPortals()
@@ -826,7 +824,7 @@ func (e *Engine) Update(inp *input.Input) error {
 		}
 	}
 
-	e.Camera.MoveTo(e.Player.Origin.Add(&geometry.Vector{
+	e.Camera.MoveTo(e.Player.Origin.Add(geometry.Vector{
 		X: -camera.WIDTH/2 + e.Player.Width/2,
 		Y: -camera.HEIGHT/2 + e.Player.Height/2,
 	}))
@@ -873,14 +871,15 @@ func (e *Engine) ProcessPlatformsY() {
 }
 
 func (e *Engine) AlignPlayerX() {
-	var pv *geometry.Vector
+	var pv geometry.Vector
+	var pvOk bool
 
-	for t := range Collide2(e.Player.Rectangle(), e.Tiles, e.Platforms) {
-		pv = t.Rectangle().PushVectorX(e.Player.Rectangle())
+	for t := range Collide2(e.Player.Rectangle(), e.Platforms, e.Tiles) {
+		pv, pvOk = t.Rectangle().PushVectorX(e.Player.Rectangle()), true
 		break
 	}
 
-	if pv == nil {
+	if !pvOk {
 		return
 	}
 
@@ -888,23 +887,28 @@ func (e *Engine) AlignPlayerX() {
 }
 
 func (e *Engine) AlignPlayerY() {
-	var pv *geometry.Vector
+	var pv geometry.Vector
+	var pvOk bool
 	var collision object.Collidable
 
 	extendedRect := e.Player.Rectangle()
 	extendedRect.BottomY += 1e-12
 
-	for t := range Collide2(extendedRect, e.Tiles, e.Platforms) {
-		pv = t.Rectangle().PushVectorY(e.Player.Rectangle())
+	for t := range Collide2(extendedRect, e.Platforms, e.Tiles) {
+		pv, pvOk = t.Rectangle().PushVectorY(e.Player.Rectangle()), true
 		collision = t
 		break
 	}
 
-	if pv == nil {
+	if !pvOk {
 		// No collision -> in the air.
 		e.Player.SetOnGround(nil, e.Tick)
 		e.Player.Acceleration.Y = physics.GravityAcceleration
 		return
+	}
+
+	if pv.Y != 0 {
+		fmt.Println("Y collision on tick", e.Tick, "pv.Y", pv.Y)
 	}
 
 	if pv.Y <= 0 {
@@ -957,18 +961,14 @@ func (e *Engine) CollectItems() error {
 
 func (e *Engine) CheckPortals() {
 	for p := range Collide(e.Player.Rectangle(), e.Portals) {
-		if p.TeleportTo == nil {
-			continue
-		}
-
 		dx := 32.0
 		if e.Player.Speed.X < 0 {
-			e.Player.MoveTo(p.TeleportTo.Add(&geometry.Vector{
+			e.Player.MoveTo(p.TeleportTo.Add(geometry.Vector{
 				X: -dx,
 				Y: 0,
 			}))
 		} else {
-			e.Player.MoveTo(p.TeleportTo.Add(&geometry.Vector{
+			e.Player.MoveTo(p.TeleportTo.Add(geometry.Vector{
 				X: dx,
 				Y: 0,
 			}))

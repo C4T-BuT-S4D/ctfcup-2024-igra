@@ -18,7 +18,7 @@ type NPC struct {
 	ReturnsItem string
 }
 
-func New(origin *geometry.Point, img *ebiten.Image, dialogImage *ebiten.Image, width, height float64, dialog dialog.Dialog, item string) *NPC {
+func New(origin geometry.Point, img *ebiten.Image, dialogImage *ebiten.Image, width, height float64, dialog dialog.Dialog, item string) *NPC {
 	return &NPC{
 		Rendered:    object.NewRendered(origin, img, width, height),
 		DialogImage: dialogImage,

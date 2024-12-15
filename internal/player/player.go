@@ -42,7 +42,7 @@ type Player struct {
 	coyoteTick     int
 }
 
-func New(origin *geometry.Point, spriteBundle *resources.SpriteBundle) (*Player, error) {
+func New(origin geometry.Point, spriteBundle *resources.SpriteBundle) (*Player, error) {
 	animations := make(map[string][]*ebiten.Image)
 
 	for anim, numAnims := range map[string]int{
@@ -63,7 +63,7 @@ func New(origin *geometry.Point, spriteBundle *resources.SpriteBundle) (*Player,
 			Width:  Width,
 			Height: Height,
 		},
-		Physical:   physics.NewPhysical(),
+		Physical:   &physics.Physical{},
 		Inventory:  &Inventory{},
 		Health:     DefaultHealth,
 		animations: animations,
