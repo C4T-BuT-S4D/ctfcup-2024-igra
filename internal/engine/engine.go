@@ -847,24 +847,25 @@ func (e *Engine) AlignPlayerX() {
 func (e *Engine) AlignPlayerY() {
 	var pv *geometry.Vector
 
-	for _, t := range Collide(e.Player.Rectangle(), e.Tiles) {
+	extendedRect := e.Player.Rectangle()
+	extendedRect.BottomY += 1e-12
+
+	for _, t := range Collide(extendedRect, e.Tiles) {
 		pv = t.Rectangle().PushVectorY(e.Player.Rectangle())
 		break
 	}
 
-	e.Player.SetOnGround(false, e.Tick)
-
 	if pv == nil {
+		e.Player.SetOnGround(false, e.Tick)
+		return
+	} else if *pv == (geometry.Vector{}) {
+		e.Player.SetOnGround(true, e.Tick)
 		return
 	}
 
 	e.Player.Move(pv)
-
-	if pv.Y < 0 {
-		e.Player.SetOnGround(true, e.Tick)
-	} else {
-		e.Player.Speed.Y = 0
-	}
+	e.Player.SetOnGround(pv.Y < 0, e.Tick)
+	e.Player.Speed.Y = 0
 }
 
 func (e *Engine) CollectItems() error {
