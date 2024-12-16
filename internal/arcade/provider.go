@@ -14,6 +14,8 @@ func (sp *LocalProvider) Get(id string) (Game, error) {
 		return newBinaryGame("./internal/resources/arcades/brodilka.py"), nil
 	case "simple":
 		return newSimpleGame(), nil
+	case "maze":
+		return newBinaryGame("./internal/resources/arcades/internal/maze/maze"), nil
 	default:
 		return nil, fmt.Errorf("unknown arcade id: %s", id)
 	}
