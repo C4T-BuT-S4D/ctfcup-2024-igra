@@ -647,21 +647,21 @@
     <property name="sprite" value="guinea"/>
    </properties>
   </object>
-  <object id="155" name="cup" type="item" x="1120" y="160" width="32" height="32">
+  <object id="155" name="cheese" type="item" x="1120" y="160" width="32" height="32">
    <properties>
     <property name="important" type="bool" value="true"/>
-    <property name="sprite" value="cup"/>
+    <property name="sprite" value="cheese"/>
    </properties>
   </object>
   <object id="176" name="maze" type="arcade" x="352" y="1088" width="64" height="64">
    <properties>
-    <property name="item" value="puc"/>
+    <property name="item" value="cheese"/>
    </properties>
   </object>
-  <object id="177" name="puc" type="item" x="1280" y="160" width="32" height="32">
+  <object id="177" name="cup" type="item" x="1280" y="160" width="32" height="32">
    <properties>
     <property name="important" type="bool" value="true"/>
-    <property name="sprite" value="puc"/>
+    <property name="sprite" value="cup"/>
    </properties>
   </object>
   <object id="185" name="mushroom" type="item" x="1264" y="576" width="32" height="32">
