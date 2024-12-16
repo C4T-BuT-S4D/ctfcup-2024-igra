@@ -16,7 +16,6 @@ import (
 	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
 
-	"github.com/c4t-but-s4d/ctfcup-2024-igra/internal/engine"
 	"github.com/c4t-but-s4d/ctfcup-2024-igra/internal/logging"
 )
 
@@ -52,6 +51,16 @@ type Config struct {
 	Listen string  `mapstructure:"listen"`
 	Teams  []Team  `mapstructure:"teams"`
 	Rounds []Round `mapstructure:"rounds"`
+}
+
+type snapshotItem struct {
+	Name      string `json:"name"`
+	Important bool   `json:"important"`
+	Collected bool   `json:"collected"`
+}
+
+type snapshotEngine struct {
+	Items []snapshotItem `json:"items"`
 }
 
 func readConfig(configPath string) (*Config, error) {
@@ -133,7 +142,7 @@ func getScoreboard(cfg *Config) ([]TeamScore, error) {
 					return nil, fmt.Errorf("parsing snapshot time: %w", err)
 				}
 
-				var e engine.Engine
+				var e snapshotEngine
 				f, err := os.Open(sp)
 				if err != nil {
 					return nil, fmt.Errorf("reading snapshot file: %w", err)
