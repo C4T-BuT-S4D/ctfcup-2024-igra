@@ -85,7 +85,7 @@ func (p *Player) SetOnGround(ground object.Collidable, tick int) {
 	if p.coyoteTick == 0 {
 		p.coyoteTick = tick
 	}
-	if tick-p.coyoteTick > 7 {
+	if tick-p.coyoteTick > 6 {
 		p.onGroundCoyote = false
 		p.coyoteTick = 0
 	}
