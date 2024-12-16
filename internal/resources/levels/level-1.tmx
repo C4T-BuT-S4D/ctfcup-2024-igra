@@ -640,11 +640,11 @@
     <property name="sprite" value="door"/>
    </properties>
   </object>
-  <object id="11" name="test-npc" type="npc" x="2944" y="1024" width="64" height="64">
+  <object id="11" name="rop-npc" type="npc" x="2944" y="1024" width="64" height="64">
    <properties>
-    <property name="dialog-sprite" value="guinea_dialog"/>
-    <property name="item" value="cup"/>
-    <property name="sprite" value="guinea"/>
+    <property name="dialog-sprite" value="oleg"/>
+    <property name="item" value="finka"/>
+    <property name="sprite" value="nkvd"/>
    </properties>
   </object>
   <object id="155" name="cheese" type="item" x="1120" y="160" width="32" height="32">
@@ -658,10 +658,10 @@
     <property name="item" value="cheese"/>
    </properties>
   </object>
-  <object id="177" name="cup" type="item" x="1280" y="160" width="32" height="32">
+  <object id="177" name="finka" type="item" x="1280" y="160" width="32" height="32">
    <properties>
     <property name="important" type="bool" value="true"/>
-    <property name="sprite" value="cup"/>
+    <property name="sprite" value="finka"/>
    </properties>
   </object>
   <object id="185" name="mushroom" type="item" x="1264" y="576" width="32" height="32">
