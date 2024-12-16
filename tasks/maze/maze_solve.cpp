@@ -1,6 +1,10 @@
 #include <iostream>
 #include <utility>
 #include <set>
+#include <cstdint>
+#include <vector>
+#include <arpa/inet.h>
+#include <cstdlib>
 
 #define SCREEN_SIZE 64
 #define SPACE 15
