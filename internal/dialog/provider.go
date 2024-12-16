@@ -27,6 +27,10 @@ func (sp *StandardProvider) Get(id string) (Dialog, error) {
 	switch id {
 	case "test-npc":
 		return NewDummy("Hello, I'm a test NPC!\n 2 + 2 = ?", "4"), nil
+	case "rop-npc":
+		return NewBinary("./internal/resources/dialogs/rop", "hello!", "you win", true), nil
+	case "crackme-npc":
+		return NewBinary("./internal/resources/dialogs/crackme", "hello!", "gj", false), nil
 	default:
 		return nil, fmt.Errorf("unknown dialog id: %s", id)
 	}
