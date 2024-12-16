@@ -7,12 +7,20 @@ import (
 	"github.com/c4t-but-s4d/ctfcup-2024-igra/internal/object"
 )
 
-type StaticTile struct {
-	*object.Rendered
+type Flips struct {
+	Horizontal bool
+	Vertical   bool
+	Diagonal   bool
 }
 
-func NewStaticTile(origin geometry.Point, width, height int, image *ebiten.Image) *StaticTile {
+type StaticTile struct {
+	*object.Rendered
+	Flips Flips
+}
+
+func NewStaticTile(origin geometry.Point, width, height int, image *ebiten.Image, flips Flips) *StaticTile {
 	return &StaticTile{
 		Rendered: object.NewRendered(origin, image, float64(width), float64(height)),
+		Flips:    flips,
 	}
 }

@@ -8,6 +8,7 @@ import (
 	"errors"
 	"fmt"
 	"image/color"
+	"math"
 
 	// Register png codec.
 	_ "image/png"
@@ -151,6 +152,11 @@ func New(config Config, resourceBundle *resources.Bundle, dialogProvider dialog.
 					tmap.TileWidth,
 					tmap.TileHeight,
 					tileImage,
+					tiles.Flips{
+						Horizontal: dt.HorizontalFlip,
+						Vertical:   dt.VerticalFlip,
+						Diagonal:   dt.DiagonalFlip,
+					},
 				)
 
 				if collisions {
@@ -177,7 +183,9 @@ func New(config Config, resourceBundle *resources.Bundle, dialogProvider dialog.
 				},
 				l.Image.Width,
 				l.Image.Height,
-				bgImage),
+				bgImage,
+				tiles.Flips{},
+			),
 		})
 	}
 
@@ -242,10 +250,11 @@ func New(config Config, resourceBundle *resources.Bundle, dialogProvider dialog.
 					o.Properties.GetString("boss"),
 				)
 			case "spike":
-				sprite := resources.SpriteSpike
-				if o.Properties.GetBool("down") {
-					sprite = resources.SpriteSpikeDown
+				direction := o.Properties.GetString("direction")
+				if direction == "" {
+					direction = "up"
 				}
+				sprite := resources.SpriteType("spike_" + direction)
 				spikes = append(spikes, damage.NewSpike(
 					geometry.Point{
 						X: o.X,
@@ -615,11 +624,26 @@ func (e *Engine) Draw(screen *ebiten.Image) {
 			base := geometry.Origin.Add(visible)
 			op := &ebiten.DrawImageOptions{}
 
-			switch c.(type) {
+			switch o := c.(type) {
 			case *player.Player:
 				if e.Player.LooksRight {
 					op.GeoM.Scale(-1, 1)
 					op.GeoM.Translate(e.Player.Width, 0)
+				}
+			case *tiles.StaticTile:
+				// Yes, if's, not else-if's. Do not question this.
+				if o.Flips.Horizontal {
+					op.GeoM.Scale(-1, 1)
+					op.GeoM.Translate(o.Width, 0)
+				}
+				if o.Flips.Vertical {
+					op.GeoM.Scale(1, -1)
+					op.GeoM.Translate(0, o.Height)
+				}
+				if o.Flips.Diagonal {
+					op.GeoM.Rotate(-math.Pi / 2)
+					op.GeoM.Scale(-1, 1)
+					op.GeoM.Translate(o.Width, o.Height)
 				}
 			case *damage.Bullet:
 				op.GeoM.Scale(4, 4)
