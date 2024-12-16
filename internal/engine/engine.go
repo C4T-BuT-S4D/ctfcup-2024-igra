@@ -241,12 +241,16 @@ func New(config Config, resourceBundle *resources.Bundle, dialogProvider dialog.
 					o.Properties.GetString("boss"),
 				)
 			case "spike":
+				sprite := resources.SpriteSpike
+				if o.Properties.GetBool("down") {
+					sprite = resources.SpriteSpikeDown
+				}
 				spikes = append(spikes, damage.NewSpike(
 					geometry.Point{
 						X: o.X,
 						Y: o.Y,
 					},
-					resourceBundle.GetSprite(resources.SpriteSpike),
+					resourceBundle.GetSprite(sprite),
 					o.Width,
 					o.Height,
 				))
