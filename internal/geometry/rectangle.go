@@ -51,12 +51,12 @@ func (a *Rectangle) PushVectorY(b *Rectangle) Vector {
 }
 
 func (a *Rectangle) pushVector(b *Rectangle, vecs []Vector, check Vector) Vector {
-	if !a.Intersects(b) || check.LengthSquared() < 1e-12 {
+	if !a.Intersects(b) || check.Length() < 1e-6 {
 		return Vector{}
 	}
 
 	v := vecs[0]
-	if v1 := vecs[1]; v1.LengthSquared() < v.LengthSquared() {
+	if v1 := vecs[1]; v1.Length() < v.Length() {
 		v = v1
 	}
 

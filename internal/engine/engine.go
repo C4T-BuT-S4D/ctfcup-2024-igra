@@ -8,6 +8,9 @@ import (
 	"errors"
 	"fmt"
 	"image/color"
+	// Register png codec.
+	_ "image/png"
+	"math/rand/v2"
 	"os"
 	"path"
 	"path/filepath"
@@ -15,6 +18,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/c4t-but-s4d/ctfcup-2024-igra/internal/boss"
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/text/v2"
 	"github.com/hajimehoshi/ebiten/v2/vector"
@@ -39,9 +43,6 @@ import (
 	"github.com/c4t-but-s4d/ctfcup-2024-igra/internal/resources"
 	"github.com/c4t-but-s4d/ctfcup-2024-igra/internal/tiles"
 	gameserverpb "github.com/c4t-but-s4d/ctfcup-2024-igra/proto/go/gameserver"
-
-	// Register png codec.
-	_ "image/png"
 )
 
 const dialogShowLines = 12
@@ -71,6 +72,9 @@ type Engine struct {
 	Arcades          []*arcade.Machine        `json:"-" msgpack:"arcades"`
 	EnemyBullets     []*damage.Bullet         `json:"-" msgpack:"enemyBullets"`
 	BackgroundImages []*tiles.BackgroundImage `json:"-" msgpack:"backgroundImages"`
+
+	BossEntered bool      `json:"-" msgpack:"bossEntered"`
+	Boss        boss.BOSS `json:"-" msgpack:"boss"`
 
 	StartSnapshot *Snapshot `json:"-" msgpack:"-"`
 
@@ -192,6 +196,7 @@ func New(config Config, resourceBundle *resources.Bundle, dialogProvider dialog.
 		platforms []*platform.Platform
 		npcs      []*npc.NPC
 		arcades   []*arcade.Machine
+		bossObj   boss.BOSS
 	)
 	winPoints := make(map[string]*geometry.Point)
 	portalsMap := make(map[string]*portal.Portal)
@@ -286,6 +291,22 @@ func New(config Config, resourceBundle *resources.Bundle, dialogProvider dialog.
 				))
 			case "boss-win":
 				winPoints[o.Name] = &geometry.Point{X: o.X, Y: o.Y}
+			case "boss":
+				img := resourceBundle.GetSprite(resources.SpriteType(o.Properties.GetString("sprite")))
+				bulletImg := resourceBundle.GetSprite(resources.SpriteBullet)
+				bossObj = boss.NewV1(
+					object.NewRendered(
+						geometry.Point{
+							X: o.X,
+							Y: o.Y,
+						},
+						img,
+						o.Width,
+						o.Height,
+					),
+					bulletImg,
+				)
+
 			case "arcade":
 				img := resourceBundle.GetSprite(resources.SpriteArcade)
 				arc, err := arcadeProvider.Get(o.Name)
@@ -367,6 +388,7 @@ func New(config Config, resourceBundle *resources.Bundle, dialogProvider dialog.
 		Spikes:           spikes,
 		Platforms:        platforms,
 		NPCs:             npcs,
+		Boss:             bossObj,
 		Arcades:          arcades,
 		resourceBundle:   resourceBundle,
 		snapshotsDir:     config.SnapshotsDir,
@@ -424,6 +446,11 @@ func (e *Engine) Reset() {
 	e.activeArcade = nil
 	e.EnemyBullets = nil
 	e.Tick = 0
+
+	e.BossEntered = false
+	if e.Boss != nil {
+		e.Boss.Reset()
+	}
 }
 
 func (e *Engine) MakeSnapshot() (*Snapshot, error) {
@@ -613,6 +640,19 @@ func (e *Engine) Draw(screen *ebiten.Image) {
 				screen.DrawImage(obj.Image(), op)
 			default:
 			}
+		}
+	}
+
+	if e.BossEntered && e.Boss != nil {
+		bossHealth := e.Boss.Health()
+		if bossHealth != nil && bossHealth.Health > 0 {
+			op := &ebiten.DrawImageOptions{}
+			width := float64(camera.WIDTH) * float64(bossHealth.Health) / float64(bossHealth.MaxHealth)
+			op.GeoM.Scale(width, 32)
+			op.GeoM.Translate((float64(camera.WIDTH)-width)/2, 0)
+
+			bossHpImage := e.resourceBundle.GetSprite(resources.SpriteHP)
+			screen.DrawImage(bossHpImage, op)
 		}
 	}
 
@@ -808,6 +848,7 @@ func (e *Engine) Update(inp *input.Input) error {
 	e.CheckPortals()
 	e.CheckSpikes()
 	e.CheckEnemyBullets()
+	e.CheckBoss()
 	if err := e.CollectItems(); err != nil {
 		return fmt.Errorf("collecting items: %w", err)
 	}
@@ -972,6 +1013,10 @@ func (e *Engine) CheckPortals() {
 				Y: 0,
 			}))
 		}
+
+		if p.Boss != "" {
+			e.BossEntered = true
+		}
 	}
 }
 
@@ -984,7 +1029,19 @@ func (e *Engine) CheckSpikes() {
 func (e *Engine) CheckEnemyBullets() {
 	var bullets []*damage.Bullet
 
+	const maxBullets = 1000
+	if len(e.EnemyBullets) > maxBullets {
+		e.EnemyBullets = e.EnemyBullets[len(e.EnemyBullets)-maxBullets:]
+	}
+
+	rnd := rand.New(rand.NewPCG(0, uint64(e.Tick)))
 	for _, b := range e.EnemyBullets {
+		if b.PlayerSeekSpeed > 0 {
+			b.Direction = e.Player.Origin.SubPoint(b.Origin).Normalize().Multiply(b.PlayerSeekSpeed)
+			dx := (rnd.Float64() - 0.5) / 3
+			dy := (rnd.Float64() - 0.5) / 3
+			b.Direction = b.Direction.Add(geometry.Vector{X: dx, Y: dy})
+		}
 		b.Move(b.Direction)
 
 		ok := true
@@ -1007,6 +1064,15 @@ func (e *Engine) CheckEnemyBullets() {
 		e.Player.Health -= b.Damage
 		b.Triggered = true
 	}
+}
+
+func (e *Engine) CheckBoss() {
+	if e.Boss == nil || !e.BossEntered {
+		return
+	}
+
+	res := e.Boss.Tick(&boss.TickState{CurrentTick: e.Tick})
+	e.EnemyBullets = append(e.EnemyBullets, res.Bullets...)
 }
 
 func (e *Engine) CheckNPCClose() *npc.NPC {

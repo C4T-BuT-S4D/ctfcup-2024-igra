@@ -14,15 +14,23 @@ const (
 
 type Bullet struct {
 	*object.Rendered
-	Damageable `msgpack:"-"`
-	Direction  geometry.Vector
-	Triggered  bool
+	Damageable      `msgpack:"-"`
+	PlayerSeekSpeed float64
+	Direction       geometry.Vector
+	Triggered       bool
 }
 
-func NewBullet(origin geometry.Point, img *ebiten.Image, damage int, direction geometry.Vector) *Bullet {
+func NewBullet(
+	origin geometry.Point,
+	img *ebiten.Image,
+	damage int,
+	direction geometry.Vector,
+	playerSeekSpeed float64,
+) *Bullet {
 	return &Bullet{
-		Rendered:   object.NewRendered(origin, img, BulletWidth, BulletHeight),
-		Damageable: NewDamageable(damage),
-		Direction:  direction,
+		Rendered:        object.NewRendered(origin, img, BulletWidth, BulletHeight),
+		Damageable:      NewDamageable(damage),
+		Direction:       direction,
+		PlayerSeekSpeed: playerSeekSpeed,
 	}
 }
