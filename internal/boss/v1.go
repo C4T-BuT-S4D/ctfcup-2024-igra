@@ -53,6 +53,20 @@ func (b *V1) Tick(s *TickState) *TickResult {
 		return &TickResult{Dead: true}
 	}
 
+	if b.stage == V1StageInitial && b.health < 100 {
+		b.stage = V1StageHealing
+	}
+
+	if b.stage == V1StageHealing {
+		if (s.CurrentTick-b.startTick)%20 == 0 {
+			b.health += 50
+		}
+		if b.health >= 300 {
+			b.health = 300
+			b.stage = V1StageDeath
+		}
+	}
+
 	const (
 		bulletCount           = 1
 		bulletSpawnSquareSize = 50
@@ -62,13 +76,7 @@ func (b *V1) Tick(s *TickState) *TickResult {
 
 	res := &TickResult{}
 	switch b.stage {
-	case V1StageInitial:
-		if b.health < 10 {
-			b.stage = V1StageHealing
-			b.health = 10
-			break
-		}
-
+	case V1StageInitial, V1StageHealing:
 		if (s.CurrentTick-b.startTick)%30 == 0 {
 			b.health -= 4
 		}
@@ -84,16 +92,6 @@ func (b *V1) Tick(s *TickState) *TickResult {
 				geometry.Vector{X: dx, Y: dy},
 				bulletSpeed,
 			))
-		}
-
-	case V1StageHealing:
-		if (s.CurrentTick-b.startTick)%20 == 0 {
-			b.health += 50
-		}
-		if b.health >= 300 {
-			b.health = 300
-			b.stage = V1StageDeath
-			break
 		}
 
 	case V1StageDeath:
