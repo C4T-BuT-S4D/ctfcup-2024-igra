@@ -1059,3 +1059,7 @@ func (e *Engine) ValidateChecksum(checksum string) error {
 func (e *Engine) ActiveNPC() *npc.NPC {
 	return e.activeNPC
 }
+
+func (e *Engine) ActiveArcade() *arcade.Machine {
+	return e.activeArcade
+}

@@ -90,7 +90,18 @@ func (g *GameServer) ProcessEvent(stream gameserverpb.GameServerService_ProcessE
 		if npc := eng.ActiveNPC(); npc != nil {
 			event := &gameserverpb.ServerEvent{Event: &gameserverpb.ServerEvent_GameEvent{
 				GameEvent: &gameserverpb.GameEvent{
-					State: npc.Dialog.State().ToProto(),
+					DialogState: npc.Dialog.State().ToProto(),
+				},
+			}}
+			logrus.Debugf("sending event: %v", req)
+			if err := stream.Send(event); err != nil {
+				return status.Errorf(codes.Internal, "failed to send game event: %v", err)
+			}
+		}
+		if arc := eng.ActiveArcade(); arc != nil {
+			event := &gameserverpb.ServerEvent{Event: &gameserverpb.ServerEvent_GameEvent{
+				GameEvent: &gameserverpb.GameEvent{
+					ArcadeState: arc.Game.State().ToProto(),
 				},
 			}}
 			logrus.Debugf("sending event: %v", req)

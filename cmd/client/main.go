@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"google.golang.org/grpc/encoding/gzip"
 	"os"
 	"os/signal"
 	"syscall"
@@ -42,8 +43,6 @@ func NewGame(ctx context.Context, client gameserverpb.GameServerServiceClient, l
 
 	resourceBundle := resources.NewBundle(true)
 
-	arcadeProvider := &arcade.LocalProvider{}
-
 	if client != nil {
 		eventStream, err := client.ProcessEvent(ctx)
 		if err != nil {
@@ -57,6 +56,7 @@ func NewGame(ctx context.Context, client gameserverpb.GameServerServiceClient, l
 		}
 
 		dialogProvider := &dialog.ClientProvider{}
+		arcadeProvider := &arcade.ClientProvider{}
 
 		if snapshotProto := startSnapshotEvent.GetSnapshot(); snapshotProto.Data == nil {
 			e, err := engine.New(engineConfig, resourceBundle, dialogProvider, arcadeProvider)
@@ -84,7 +84,7 @@ func NewGame(ctx context.Context, client gameserverpb.GameServerServiceClient, l
 			}
 		}()
 	} else {
-		e, err := engine.New(engineConfig, resourceBundle, dialog.NewStandardProvider(true), arcadeProvider)
+		e, err := engine.New(engineConfig, resourceBundle, dialog.NewStandardProvider(true), &arcade.LocalProvider{})
 		if err != nil {
 			return nil, fmt.Errorf("initializing engine: %w", err)
 		}
@@ -131,12 +131,31 @@ func (g *Game) Update() error {
 			return fmt.Errorf("failed to send event to the server: %w", err)
 		}
 
-		if g.Engine.ActiveNPC() != nil {
+		if npc := g.Engine.ActiveNPC(); npc != nil {
 			// Expect dialog state from the server.
 			select {
 			case serverEvent := <-g.serverEventChan:
-				if gs := serverEvent.GetGameEvent().GetState(); gs != nil {
-					g.Engine.ActiveNPC().Dialog.SetState(dialog.StateFromProto(gs))
+				if gs := serverEvent.GetGameEvent().GetDialogState(); gs != nil {
+					npc.Dialog.SetState(dialog.StateFromProto(gs))
+				}
+			case err := <-g.recvErrChan:
+				return fmt.Errorf("server returned error: %w", err)
+			case <-g.ctx.Done():
+				return g.ctx.Err()
+			}
+		}
+
+		if arc := g.Engine.ActiveArcade(); arc != nil {
+			cgame, ok := arc.Game.(*arcade.ClientGame)
+			if !ok {
+				return errors.New("active arcade is not a client arcade")
+			}
+
+			// Expect arcade state from the server.
+			select {
+			case serverEvent := <-g.serverEventChan:
+				if gs := serverEvent.GetGameEvent().GetArcadeState(); gs != nil {
+					cgame.SetState(arcade.StateFromProto(gs))
 				}
 			case err := <-g.recvErrChan:
 				return fmt.Errorf("server returned error: %w", err)
@@ -177,6 +196,7 @@ func main() {
 	if !*standalone {
 		opts := []grpc.DialOption{
 			grpc.WithTransportCredentials(insecure.NewCredentials()),
+			grpc.WithDefaultCallOptions(grpc.UseCompressor(gzip.Name)),
 		}
 
 		if authToken := os.Getenv("AUTH_TOKEN"); authToken != "" {

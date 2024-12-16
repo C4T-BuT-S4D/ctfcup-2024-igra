@@ -20,3 +20,9 @@ func (sp *LocalProvider) Get(id string) (Game, error) {
 		return nil, fmt.Errorf("unknown arcade id: %s", id)
 	}
 }
+
+type ClientProvider struct{}
+
+func (cp *ClientProvider) Get(_ string) (Game, error) {
+	return NewClientGame(), nil
+}

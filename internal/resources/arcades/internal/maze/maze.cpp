@@ -101,14 +101,14 @@ int main() {
         for (int j = 0; j < SCREEN_SIZE; ++j) {
             char c = MAZE[i * SCREEN_SIZE + j];
             if (c == '#') {
-                screen[i][j] = SPACE;
+                screen[i][j] = WALL;
             } else if (c == 'S') {
                 start = std::make_pair(j, i);
             } else if (c == 'E') {
                 screen[i][j] = END;
                 end = std::make_pair(j, i);
             } else if (c == '.') {
-                screen[i][j] = SPACE;
+                screen[i][j] = PATH;
             } else {
                 screen[i][j] = SPACE;
             }
@@ -121,9 +121,19 @@ int main() {
     bool won = false;
     bool lost = false;
 
+    std::set<std::pair<int, int>> visited;
     std::pair<int, int> delta = std::make_pair(0, 0);
     std::set<Move> moves;
-    while (!won && !lost) {
+    while (true) {
+        if (won) {
+            std::cout << "WIN" << std::flush;
+            continue;
+        }
+        if (lost) {
+            std::cout << "LOSE" << std::flush;
+            continue;
+        }
+
         delta.first = 0;
         delta.second = 0;
         moves.clear();
@@ -173,17 +183,15 @@ int main() {
             if (cell != '#') {
                 screen[player.second][player.first] = SPACE;
                 player = new_pos;
+                if (visited.find(player) != visited.end()) {
+                    lost = true;
+                }
+                visited.insert(player);
             }
 
             screen[player.second][player.first] = PLAYER;
         }
         print_screen();
-    }
-
-    if (won) {
-        std::cout << "WON" << std::flush;
-    } else {
-        std::cout << "LOSE" << std::flush;
     }
 
     return 0;

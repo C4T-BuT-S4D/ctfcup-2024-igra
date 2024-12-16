@@ -27,6 +27,8 @@ import (
 	"github.com/c4t-but-s4d/ctfcup-2024-igra/internal/logging"
 	"github.com/c4t-but-s4d/ctfcup-2024-igra/internal/server"
 	gameserverpb "github.com/c4t-but-s4d/ctfcup-2024-igra/proto/go/gameserver"
+
+	_ "google.golang.org/grpc/encoding/gzip"
 )
 
 func main() {

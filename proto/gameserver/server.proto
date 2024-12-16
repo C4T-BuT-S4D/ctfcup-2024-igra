@@ -33,8 +33,26 @@ message DialogState {
   string text = 3;
 }
 
+message Color {
+  uint32 r = 1;
+  uint32 g = 2;
+  uint32 b = 3;
+  uint32 a = 4;
+}
+
+message ArcadeState {
+  enum Result {
+    RESULT_UNSPECIFIED = 0;
+    RESULT_WON = 1;
+    RESULT_LOST = 2;
+  }
+  Result result = 1;
+  repeated Color screen = 2;
+}
+
 message GameEvent {
-  DialogState state = 1;
+  DialogState dialog_state = 1;
+  ArcadeState arcade_state = 2;
 }
 
 message ServerEvent {
