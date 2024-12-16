@@ -8,6 +8,7 @@ import (
 	"errors"
 	"fmt"
 	"image/color"
+
 	// Register png codec.
 	_ "image/png"
 	"math/rand/v2"
@@ -446,6 +447,7 @@ func (s *Snapshot) ToProto() *gameserverpb.EngineSnapshot {
 func (e *Engine) Reset() {
 	e.Player.MoveTo(e.playerSpawn)
 	e.Player.Health = player.DefaultHealth
+	*e.Player.Physical = physics.Physical{}
 	e.activeNPC = nil
 	e.activeArcade = nil
 	e.EnemyBullets = nil
