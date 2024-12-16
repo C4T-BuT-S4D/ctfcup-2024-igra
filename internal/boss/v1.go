@@ -110,7 +110,7 @@ func (b *V1) Tick(s *TickState) *TickResult {
 			res.Bullets = append(res.Bullets, damage.NewBullet(
 				b.Origin.Add(geometry.Vector{X: dx, Y: dy}),
 				b.BulletImg,
-				bulletDamage*scalingFactor,
+				bulletDamage,
 				geometry.Vector{X: dx, Y: dy},
 				bulletSpeed*scalingFactor,
 			))
