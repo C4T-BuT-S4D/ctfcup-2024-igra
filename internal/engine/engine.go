@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"image/color"
 	"math"
+	"strconv"
 
 	// Register png codec.
 	_ "image/png"
@@ -21,6 +22,7 @@ import (
 	"time"
 
 	"github.com/c4t-but-s4d/ctfcup-2024-igra/internal/boss"
+	"github.com/c4t-but-s4d/ctfcup-2024-igra/internal/casino"
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/text/v2"
 	"github.com/hajimehoshi/ebiten/v2/vector"
@@ -72,6 +74,7 @@ type Engine struct {
 	Platforms        []*platform.Platform     `json:"-" msgpack:"platforms"`
 	NPCs             []*npc.NPC               `json:"-" msgpack:"npcs"`
 	Arcades          []*arcade.Machine        `json:"-" msgpack:"arcades"`
+	Slots            []*casino.SlotMachine    `json:"-" msgpack:"slots"`
 	EnemyBullets     []*damage.Bullet         `json:"-" msgpack:"enemyBullets"`
 	BackgroundImages []*tiles.BackgroundImage `json:"-" msgpack:"backgroundImages"`
 
@@ -80,12 +83,14 @@ type Engine struct {
 
 	StartSnapshot *Snapshot `json:"-" msgpack:"-"`
 
-	resourceBundle *resources.Bundle
-	snapshotsDir   string
-	playerSpawn    geometry.Point
-	activeNPC      *npc.NPC
-	activeArcade   *arcade.Machine
-	dialogControl  dialogControl
+	resourceBundle      *resources.Bundle
+	snapshotsDir        string
+	playerSpawn         geometry.Point
+	activeNPC           *npc.NPC
+	activeArcade        *arcade.Machine
+	dialogControl       dialogControl
+	notificationText    string
+	notificationEndTick int
 
 	Muted    bool   `json:"-" msgpack:"-"`
 	Paused   bool   `json:"-" msgpack:"paused"`
@@ -205,6 +210,7 @@ func New(config Config, resourceBundle *resources.Bundle, dialogProvider dialog.
 		platforms []*platform.Platform
 		npcs      []*npc.NPC
 		arcades   []*arcade.Machine
+		slots     []*casino.SlotMachine
 		bossObj   boss.BOSS
 	)
 	winPoints := make(map[string]*geometry.Point)
@@ -321,7 +327,22 @@ func New(config Config, resourceBundle *resources.Bundle, dialogProvider dialog.
 					),
 					bulletImg,
 				)
-
+			case "slots":
+				img := resourceBundle.GetSprite(resources.SpriteType(o.Properties.GetString("sprite")))
+				slotMachine := casino.NewSlotMachine(
+					geometry.Point{
+						X: o.X,
+						Y: o.Y,
+					},
+					img,
+					o.Width,
+					o.Height,
+					o.Properties.GetInt("coins"),
+					o.Properties.GetInt("cooldown"),
+					o.Properties.GetInt("seed"),
+					o.Properties.GetFloat("probability"),
+				)
+				slots = append(slots, slotMachine)
 			case "arcade":
 				img := resourceBundle.GetSprite(resources.SpriteArcade)
 				arc, err := arcadeProvider.Get(o.Name)
@@ -405,6 +426,7 @@ func New(config Config, resourceBundle *resources.Bundle, dialogProvider dialog.
 		NPCs:             npcs,
 		Boss:             bossObj,
 		Arcades:          arcades,
+		Slots:            slots,
 		resourceBundle:   resourceBundle,
 		snapshotsDir:     config.SnapshotsDir,
 		playerSpawn:      playerPos,
@@ -460,6 +482,11 @@ func (e *Engine) Reset() {
 	*e.Player.Physical = physics.Physical{}
 	e.activeNPC = nil
 	e.activeArcade = nil
+	for _, sm := range e.Slots {
+		sm.Reset()
+	}
+	e.notificationText = ""
+	e.notificationEndTick = 0
 	e.EnemyBullets = nil
 	e.Tick = 0
 
@@ -516,6 +543,22 @@ func (e *Engine) drawYouWinScreen(screen *ebiten.Image) {
 	textOp.GeoM.Translate(camera.WIDTH/2-width/2, camera.HEIGHT/2)
 	textOp.ColorScale.ScaleWithColor(gColor)
 	text.Draw(screen, "YOU WIN", face, textOp)
+}
+
+func (e *Engine) drawNotification(screen *ebiten.Image) {
+	if e.notificationText == "" {
+		return
+	}
+
+	face := e.resourceBundle.GetFontFace(resources.FontDialog)
+	yellow := color.RGBA{R: 255, G: 255, B: 0, A: 255}
+
+	width, _ := text.Measure(e.notificationText, face, 0)
+
+	textOp := &text.DrawOptions{}
+	textOp.GeoM.Translate(camera.WIDTH/2-width/2, camera.HEIGHT/8)
+	textOp.ColorScale.ScaleWithColor(yellow)
+	text.Draw(screen, e.notificationText, face, textOp)
 }
 
 func (e *Engine) drawArcadeState(screen *ebiten.Image) {
@@ -714,6 +757,13 @@ func (e *Engine) Draw(screen *ebiten.Image) {
 		textOp.GeoM.Translate(start, start+step*index)
 		textOp.ColorScale.ScaleWithColor(color.RGBA{R: 0, G: 255, B: 0, A: 255})
 		text.Draw(screen, tickTxt, face, textOp)
+		index++
+
+		coinsTxt := fmt.Sprintf("Coins: %d", e.Player.Coins)
+		textOp = &text.DrawOptions{}
+		textOp.GeoM.Translate(start, start+step*index)
+		textOp.ColorScale.ScaleWithColor(color.RGBA{R: 255, G: 215, B: 0, A: 255})
+		text.Draw(screen, coinsTxt, face, textOp)
 
 		for i, it := range e.Player.Inventory.Items {
 			itemX := e.Camera.Width - float64(i+1)*72
@@ -735,6 +785,8 @@ func (e *Engine) Draw(screen *ebiten.Image) {
 	if e.activeArcade != nil {
 		e.drawArcadeState(screen)
 	}
+
+	e.drawNotification(screen)
 }
 
 func (e *Engine) Update(inp *input.Input) error {
@@ -785,7 +837,7 @@ func (e *Engine) Update(inp *input.Input) error {
 				}
 			case ebiten.KeyEnter:
 				// enter
-				e.activeNPC.Dialog.Feed(string(e.dialogControl.inputBuffer))
+				e.activeNPC.Dialog.Feed(string(e.dialogControl.inputBuffer), e.Player.Coins)
 				e.dialogControl.inputBuffer = e.dialogControl.inputBuffer[:0]
 			default:
 				e.dialogControl.inputBuffer = append(e.dialogControl.inputBuffer, input.Key(c).Rune())
@@ -891,6 +943,16 @@ func (e *Engine) Update(inp *input.Input) error {
 		if err := e.activeArcade.Game.Start(); err != nil {
 			return fmt.Errorf("starting arcade game: %w", err)
 		}
+	}
+
+	availableSlots := e.CheckSlotsClose()
+	if availableSlots != nil && inp.IsKeyNewlyPressed(ebiten.KeyE) {
+		e.PlaySlots(availableSlots)
+	}
+
+	if e.notificationEndTick > 0 && e.Tick >= e.notificationEndTick {
+		e.notificationText = ""
+		e.notificationEndTick = 0
 	}
 
 	e.Camera.MoveTo(e.Player.Origin.Add(geometry.Vector{
@@ -1124,6 +1186,30 @@ func (e *Engine) CheckArcadeClose() *arcade.Machine {
 	}
 
 	return nil
+}
+
+func (e *Engine) CheckSlotsClose() *casino.SlotMachine {
+	for s := range Collide(e.Player.Rectangle(), e.Slots) {
+		if s.LastTriggered+s.Cooldown > e.Tick {
+			continue
+		}
+
+		return s
+	}
+
+	return nil
+}
+
+func (e *Engine) PlaySlots(s *casino.SlotMachine) {
+	if s.Won() {
+		e.Player.Coins += s.Coins
+		e.notificationText = "Congrats! You won " + strconv.Itoa(s.Coins) + " coins!"
+	} else {
+		e.notificationText = "Aww. Try again next time!"
+	}
+	e.notificationEndTick = e.Tick + ebiten.TPS()*3
+
+	s.LastTriggered = e.Tick
 }
 
 func (e *Engine) Checksum() (string, error) {

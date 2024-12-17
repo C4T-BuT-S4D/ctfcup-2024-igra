@@ -33,6 +33,8 @@ func (sp *StandardProvider) Get(id string) (Dialog, error) {
 		return NewBinary("./internal/resources/dialogs/crackme", "hello!", "gj", false), nil
 	case "steve-npc":
 		return NewSteve(), nil
+	case "khajiit-npc":
+		return NewKhajiit("CD Player", 1000), nil
 	default:
 		return nil, fmt.Errorf("unknown dialog id: %s", id)
 	}

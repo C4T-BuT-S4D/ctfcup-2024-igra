@@ -19,7 +19,7 @@ func (d *dummyDialog) Greeting() {
 	d.s.Text = d.greet
 }
 
-func (d *dummyDialog) Feed(text string) {
+func (d *dummyDialog) Feed(text string, _ int) {
 	if strings.EqualFold(text, d.answer) {
 		d.s.Text += fmt.Sprintf("\n Answer '%s' is correct!", text)
 		d.s.GaveItem = true

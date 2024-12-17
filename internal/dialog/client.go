@@ -14,7 +14,7 @@ func (c *ClientDialog) Greeting() {
 	// No need to greet.
 }
 
-func (c *ClientDialog) Feed(_ string) {
+func (c *ClientDialog) Feed(_ string, _ int) {
 	// No need to feed.
 }
 

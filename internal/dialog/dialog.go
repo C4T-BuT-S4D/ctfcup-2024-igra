@@ -26,7 +26,7 @@ func StateFromProto(s *gameserverpb.DialogState) *State {
 
 type Dialog interface {
 	Greeting()
-	Feed(text string)
+	Feed(text string, coins int)
 	State() *State
 	SetState(s *State)
 }

@@ -32,6 +32,7 @@ type Player struct {
 	currentAnimationDuration int
 
 	Inventory *Inventory
+	Coins     int
 
 	LooksRight bool
 	Health     int

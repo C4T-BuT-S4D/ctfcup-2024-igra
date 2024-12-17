@@ -47,7 +47,7 @@ func (d *BinaryDialog) getBinaryOutput(input string) (string, error) {
 	return out.String(), nil
 }
 
-func (d *BinaryDialog) Feed(text string) {
+func (d *BinaryDialog) Feed(text string, _ int) {
 	binaryOutput, err := d.getBinaryOutput(text)
 	binaryOutput = strings.TrimSpace(binaryOutput)
 	if err != nil {

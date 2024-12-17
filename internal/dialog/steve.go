@@ -16,7 +16,7 @@ func (d *steveDialog) Greeting() {
 	d.s.Text = "Wow.\nYou must have been practicing parkour since you were a child.\nI'm impressed.\nPlease take this branch of honour."
 }
 
-func (d *steveDialog) Feed(text string) {
+func (d *steveDialog) Feed(text string, _ int) {
 	if strings.EqualFold(text, "Thank you") {
 		d.s.GaveItem = true
 	}

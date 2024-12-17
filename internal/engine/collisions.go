@@ -22,6 +22,7 @@ func (e *Engine) Collisions(r *geometry.Rectangle) []object.Collidable {
 	result = collideGeneric(result, r, e.Platforms)
 	result = collideGeneric(result, r, e.NPCs)
 	result = collideGeneric(result, r, e.Arcades)
+	result = collideGeneric(result, r, e.Slots)
 	result = collideGeneric(result, r, []*player.Player{e.Player})
 	result = collideGeneric(result, r, e.EnemyBullets)
 
