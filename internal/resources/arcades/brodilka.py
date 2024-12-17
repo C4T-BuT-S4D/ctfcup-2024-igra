@@ -17,7 +17,11 @@ def gen_location() -> tuple[int, int]:
 
 
 target = gen_location()
+target_trail = []
+target_trail_colors = [119, 120, 121, 122]
 enemies = [gen_location() for _ in range(32)]
+enemies_trails = [[] for _ in range(len(enemies))]
+enemy_trail_colors = [196, 167, 203, 174]
 
 
 class Move(enum.Enum):
@@ -120,10 +124,12 @@ while True:
         field[player[0]][player[1]] = (field[player[0]][player[1]] + 1) % 256
 
     for i, enemy in enumerate(enemies):
+        enemies_trails[i] = ([enemy] + enemies_trails[i])[: len(enemy_trail_colors)]
         enemies[i] = calc_move(enemy, gen_delta())
     if is_enemy_hit():
         lost = True
 
+    target_trail = ([target] + target_trail)[: len(target_trail_colors)]
     target = calc_move(target, gen_delta())
     if caught_target():
         won = True
@@ -132,4 +138,13 @@ while True:
     screen[target[0]][target[1]] = 118
     for enemy in enemies:
         screen[enemy[0]][enemy[1]] = 160
+    for i, point in enumerate(target_trail):
+        screen[point[0]][point[1]] = target_trail_colors[i]
+    for trail in enemies_trails:
+        for j, point in enumerate(trail):
+            screen[point[0]][point[1]] = enemy_trail_colors[j]
+    for i in range(SCREEN_SIZE):
+        for j in range(SCREEN_SIZE):
+            if screen[i][j] == 0:
+                screen[i][j] = 234
     write_output(screen)
