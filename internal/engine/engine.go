@@ -765,10 +765,7 @@ func (e *Engine) Update(inp *input.Input) error {
 			return nil
 		}
 		if e.activeNPC.Dialog.State().GaveItem && e.activeNPC.LinkedItem != nil {
-			e.activeNPC.LinkedItem.MoveTo(e.activeNPC.Origin.Add(geometry.Vector{
-				X: +64,
-				Y: +32,
-			}))
+			e.activeNPC.LinkedItem.MoveTo(e.Player.Origin)
 			e.activeNPC.LinkedItem = nil
 		}
 
@@ -818,10 +815,7 @@ func (e *Engine) Update(inp *input.Input) error {
 		}
 
 		if result := e.activeArcade.Game.State().Result; result == arcade.ResultWon && e.activeArcade.LinkedItem != nil {
-			e.activeArcade.LinkedItem.MoveTo(e.activeArcade.Origin.Add(geometry.Vector{
-				X: +64,
-				Y: +32,
-			}))
+			e.activeArcade.LinkedItem.MoveTo(e.Player.Origin)
 			e.activeArcade.LinkedItem = nil
 			return nil
 		} else if result != arcade.ResultUnknown {
