@@ -1,11 +1,17 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<map version="1.10" tiledversion="1.11.0" orientation="orthogonal" renderorder="right-down" width="400" height="300" tilewidth="32" tileheight="32" infinite="0" nextlayerid="11" nextobjectid="382">
+<map version="1.10" tiledversion="1.11.0" orientation="orthogonal" renderorder="right-down" width="400" height="300" tilewidth="32" tileheight="32" infinite="0" nextlayerid="13" nextobjectid="382">
  <properties>
   <property name="background" value="bg"/>
  </properties>
  <tileset firstgid="1" source="../tiles/outdoor.tsx"/>
  <imagelayer id="7" name="main_background" offsetx="3550" offsety="1960">
   <image source="../tiles/street2.png" width="1456" height="816"/>
+ </imagelayer>
+ <imagelayer id="12" name="sewer_entrance_background" offsetx="3685" offsety="2753">
+  <image source="../tiles/sewer_entrance.png" width="120" height="1600"/>
+ </imagelayer>
+ <imagelayer id="11" name="sewer_background" offsetx="3795" offsety="3102">
+  <image source="../tiles/sewer.jpg" width="1000" height="1185"/>
  </imagelayer>
  <imagelayer id="8" name="bunker_background" offsetx="5700" offsety="2360">
   <image source="../tiles/bunker-small.png" width="554" height="432"/>
@@ -625,7 +631,7 @@
 </data>
  </layer>
  <objectgroup id="2" name="objects">
-  <object id="3" type="player_spawn" x="4608" y="3552">
+  <object id="3" type="player_spawn" x="3840" y="2720">
    <point/>
   </object>
   <object id="8" name="lobby-task" type="portal" x="4352" y="2880" width="32" height="32">
@@ -858,11 +864,11 @@
     <property name="direction" value="down"/>
    </properties>
   </object>
-  <object id="219" name="test-npc" type="npc" x="3904" y="3136" width="32" height="64">
+  <object id="219" name="steve-npc" type="npc" x="3904" y="3136" width="32" height="64">
    <properties>
-    <property name="dialog-sprite" value="guinea_dialog"/>
-    <property name="item" value="cup"/>
-    <property name="sprite" value="guinea"/>
+    <property name="dialog-sprite" value="steve_dialog"/>
+    <property name="item" value="branch"/>
+    <property name="sprite" value="steve"/>
    </properties>
   </object>
   <object id="220" name="spike-l3" type="spike" x="3872" y="3104" width="32" height="32">
