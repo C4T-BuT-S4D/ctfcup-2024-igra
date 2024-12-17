@@ -250,37 +250,38 @@ func New(config Config, resourceBundle *resources.Bundle, dialogProvider dialog.
 					o.Properties.GetString("boss"),
 				)
 			case "spike":
-				direction := o.Properties.GetString("direction")
-				if direction == "" {
-					direction = "up"
-				}
-				sprite := resources.SpriteType("spike_" + direction)
 				spikes = append(spikes, damage.NewSpike(
 					geometry.Point{
 						X: o.X,
 						Y: o.Y,
 					},
-					resourceBundle.GetSprite(sprite),
+					resourceBundle.GetDirectionalSprite("spike", o.Properties.GetString("direction")),
 					o.Width,
 					o.Height,
 				))
+			case "moving_spike":
+				spikes = append(spikes, damage.NewMovingSpike(
+					geometry.Point{
+						X: o.X,
+						Y: o.Y,
+					},
+					o.Width,
+					o.Height,
+					resourceBundle.GetDirectionalSprite("spike", o.Properties.GetString("direction")),
+					physics.ParsePath(o.Properties.GetString("path")),
+					o.Properties.GetInt("distance"),
+					o.Properties.GetInt("speed"),
+				))
 			case "platform":
-				var path platform.PlatformPath
-				if o.Properties.GetString("path") == "vertical" {
-					path = platform.PathVertical
-				} else {
-					path = platform.PathHorizontal
-				}
-
 				platforms = append(platforms, platform.New(
 					geometry.Point{
 						X: o.X,
 						Y: o.Y,
 					},
-					int(o.Width),
-					int(o.Height),
+					o.Width,
+					o.Height,
 					resourceBundle.GetSprite(resources.SpritePlatform),
-					path,
+					physics.ParsePath(o.Properties.GetString("path")),
 					o.Properties.GetInt("distance"),
 					o.Properties.GetInt("speed"),
 				))
@@ -865,12 +866,12 @@ func (e *Engine) Update(inp *input.Input) error {
 
 	e.ProcessPlayerInput(inp)
 
-	e.ProcessPlatformsX()
+	e.ProcessMovingX()
 	e.Player.ApplyAccelerationX()
 	e.Player.Move(geometry.Vector{X: e.Player.Speed.X, Y: 0})
 	e.AlignPlayerX()
 
-	e.ProcessPlatformsY()
+	e.ProcessMovingY()
 	e.Player.ApplyAccelerationY()
 	e.Player.Move(geometry.Vector{X: 0, Y: e.Player.Speed.Y})
 	e.AlignPlayerY()
@@ -924,7 +925,11 @@ func (e *Engine) ProcessPlayerInput(inp *input.Input) {
 	}
 }
 
-func (e *Engine) ProcessPlatformsX() {
+func (e *Engine) ProcessMovingX() {
+	for _, s := range e.Spikes {
+		s.MoveX()
+	}
+
 	for _, p := range e.Platforms {
 		p.MoveX()
 	}
@@ -934,7 +939,11 @@ func (e *Engine) ProcessPlatformsX() {
 	}
 }
 
-func (e *Engine) ProcessPlatformsY() {
+func (e *Engine) ProcessMovingY() {
+	for _, s := range e.Spikes {
+		s.MoveY()
+	}
+
 	for _, p := range e.Platforms {
 		p.MoveY()
 	}

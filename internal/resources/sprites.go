@@ -34,6 +34,13 @@ func (sb *SpriteBundle) GetSprite(t SpriteType) *ebiten.Image {
 	return sb.getImage(fmt.Sprintf("sprites/%s.png", t))
 }
 
+func (sb *SpriteBundle) GetDirectionalSprite(t SpriteType, direction string) *ebiten.Image {
+	if direction == "" {
+		direction = "up"
+	}
+	return sb.getImage(fmt.Sprintf("sprites/%s_%s.png", t, direction))
+}
+
 func (sb *SpriteBundle) GetAnimationSprite(t SpriteType, animation string) *ebiten.Image {
 	return sb.getImage(fmt.Sprintf("sprites/%s_%s.png", t, animation))
 }
