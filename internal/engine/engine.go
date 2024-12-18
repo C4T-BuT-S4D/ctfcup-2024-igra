@@ -1198,9 +1198,7 @@ func (e *Engine) CheckBoss() {
 
 func (e *Engine) CheckNPCClose() *npc.NPC {
 	for n := range Collide(e.Player.Rectangle().Extended(40), e.NPCs) {
-		if !n.Dialog.State().Finished {
-			return n
-		}
+		return n
 	}
 
 	return nil
