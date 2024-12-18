@@ -65,7 +65,11 @@ func NewGame(ctx context.Context, client gameserverpb.GameServerServiceClient, l
 			}
 			g.Engine = e
 		} else {
-			e, err := engine.NewFromSnapshot(engineConfig, engine.NewSnapshotFromProto(snapshotProto), resourceBundle, dialogProvider, arcadeProvider)
+			snap, err := engine.NewSnapshotFromProto(snapshotProto)
+			if err != nil {
+				return nil, fmt.Errorf("parsing snapshot: %w", err)
+			}
+			e, err := engine.NewFromSnapshot(engineConfig, snap, resourceBundle, dialogProvider, arcadeProvider)
 			if err != nil {
 				return nil, fmt.Errorf("creating engine from snapshot: %w", err)
 			}

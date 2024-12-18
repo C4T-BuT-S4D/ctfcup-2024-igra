@@ -445,9 +445,16 @@ func NewFromSnapshot(config Config, snapshot *Snapshot, resourceBundle *resource
 	}
 
 	e.StartSnapshot = snapshot
-
-	if err := json.Unmarshal(snapshot.Data, e); err != nil {
-		return nil, fmt.Errorf("applying snapshot: %w", err)
+	itemMap := make(map[string]*item.Item)
+	for _, it := range snapshot.Items {
+		itemMap[it.Name] = it
+	}
+	// TODO: use copier later if needed.
+	for _, it := range e.Items {
+		if sit, ok := itemMap[it.Name]; ok {
+			it.Collected = sit.Collected
+			it.Important = sit.Important
+		}
 	}
 
 	for _, it := range e.Items {
@@ -460,20 +467,43 @@ func NewFromSnapshot(config Config, snapshot *Snapshot, resourceBundle *resource
 }
 
 type Snapshot struct {
-	Data []byte
+	Items []*item.Item `json:"items"`
 }
 
-func NewSnapshotFromProto(proto *gameserverpb.EngineSnapshot) *Snapshot {
-	return &Snapshot{Data: proto.Data}
+func NewSnapshotFromProto(proto *gameserverpb.EngineSnapshot) (*Snapshot, error) {
+	var s Snapshot
+	if err := s.FromJSON(proto.Data); err != nil {
+		return nil, fmt.Errorf("unmarshalling snapshot: %w", err)
+	}
+	return &s, nil
 }
 
-func (s *Snapshot) ToProto() *gameserverpb.EngineSnapshot {
+func (s *Snapshot) FromJSON(data []byte) error {
+	if err := json.Unmarshal(data, s); err != nil {
+		return fmt.Errorf("unmarshalling snapshot: %w", err)
+	}
+	return nil
+}
+
+func (s *Snapshot) ToJSON() ([]byte, error) {
+	data, err := json.Marshal(s)
+	if err != nil {
+		return nil, fmt.Errorf("marshalling snapshot: %w", err)
+	}
+	return data, nil
+}
+
+func (s *Snapshot) ToProto() (*gameserverpb.EngineSnapshot, error) {
 	if s == nil {
-		return nil
+		return nil, nil
+	}
+	serialized, err := s.ToJSON()
+	if err != nil {
+		return nil, err
 	}
 	return &gameserverpb.EngineSnapshot{
-		Data: s.Data,
-	}
+		Data: serialized,
+	}, nil
 }
 
 func (e *Engine) Reset() {
@@ -496,15 +526,10 @@ func (e *Engine) Reset() {
 	}
 }
 
-func (e *Engine) MakeSnapshot() (*Snapshot, error) {
-	data, err := json.Marshal(e)
-	if err != nil {
-		return nil, fmt.Errorf("marshalling engine: %w", err)
-	}
-
+func (e *Engine) MakeSnapshot() *Snapshot {
 	return &Snapshot{
-		Data: data,
-	}, nil
+		Items: e.Items,
+	}
 }
 
 func (e *Engine) SaveSnapshot(snapshot *Snapshot) error {
@@ -512,9 +537,14 @@ func (e *Engine) SaveSnapshot(snapshot *Snapshot) error {
 		return nil
 	}
 
+	data, err := snapshot.ToJSON()
+	if err != nil {
+		return err
+	}
+
 	filename := fmt.Sprintf("snapshot_%s_%s", e.Level, time.Now().UTC().Format("2006-01-02T15:04:05.999999999"))
 
-	if err := os.WriteFile(filepath.Join(e.snapshotsDir, filename), snapshot.Data, 0o400); err != nil {
+	if err := os.WriteFile(filepath.Join(e.snapshotsDir, filename), data, 0o400); err != nil {
 		return fmt.Errorf("writing snapshot file: %w", err)
 	}
 
@@ -1081,11 +1111,7 @@ func (e *Engine) CollectItems() error {
 	}
 
 	if collectedSomething {
-		snapshot, err := e.MakeSnapshot()
-		if err != nil {
-			return fmt.Errorf("making snapshot: %w", err)
-		}
-
+		snapshot := e.MakeSnapshot()
 		if err := e.SaveSnapshot(snapshot); err != nil {
 			return fmt.Errorf("saving snapshot: %w", err)
 		}

@@ -31,8 +31,10 @@ func (e *Engine) Collisions(r *geometry.Rectangle) []object.Collidable {
 
 func Collide[O object.Collidable](r *geometry.Rectangle, objects []O) iter.Seq[O] {
 	return func(yield func(O) bool) {
-		for _, o := range objects {
+		for i, o := range objects {
 			if o.Rectangle().Intersects(r) {
+				// Move to the front for faster collision detection on next tick.
+				objects[0], objects[i] = objects[i], objects[0]
 				if !yield(o) {
 					return
 				}

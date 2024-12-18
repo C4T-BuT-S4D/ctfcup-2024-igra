@@ -60,9 +60,14 @@ func (g *GameServer) ProcessEvent(stream gameserverpb.GameServerService_ProcessE
 	g.game.setEngine(eng)
 	defer g.game.resetEngine()
 
+	sp, err := eng.StartSnapshot.ToProto()
+	if err != nil {
+		return status.Errorf(codes.Internal, "failed to convert snapshot to proto: %v", err)
+	}
+
 	if err := stream.Send(&gameserverpb.ServerEvent{
 		Event: &gameserverpb.ServerEvent_Snapshot{
-			Snapshot: eng.StartSnapshot.ToProto(),
+			Snapshot: sp,
 		},
 	}); err != nil {
 		return status.Errorf(codes.Internal, "failed to send start snapshot: %v", err)

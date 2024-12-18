@@ -75,7 +75,12 @@ func main() {
 				return nil, fmt.Errorf("reading snapshot file: %w", err)
 			}
 
-			e, err := engine.NewFromSnapshot(engineConfig, &engine.Snapshot{Data: data}, resourceBundle, dialogProvider, arcadeProvider)
+			var s engine.Snapshot
+			if err := s.FromJSON(data); err != nil {
+				return nil, fmt.Errorf("decoding snapshot file: %w", err)
+			}
+
+			e, err := engine.NewFromSnapshot(engineConfig, &s, resourceBundle, dialogProvider, arcadeProvider)
 			if err != nil {
 				return nil, fmt.Errorf("creating engine from snapshot: %w", err)
 			}

@@ -54,10 +54,7 @@ func (g *Game) processEvent(event *gameserverpb.ClientEvent) error {
 	inp := input.NewFromProto(event.KeysPressed)
 
 	if inp.IsKeyNewlyPressed(ebiten.KeySlash) {
-		s, err := g.engine.MakeSnapshot()
-		if err != nil {
-			return fmt.Errorf("making snapshot: %w", err)
-		}
+		s := g.engine.MakeSnapshot()
 
 		if err := g.engine.SaveSnapshot(s); err != nil {
 			return fmt.Errorf("saving snapshot: %w", err)
