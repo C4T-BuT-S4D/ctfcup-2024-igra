@@ -31,6 +31,8 @@ func (sp *StandardProvider) Get(id string) (Dialog, error) {
 		return NewBinary("./internal/resources/dialogs/rop", "HELLO, COMRAD.CAN YOU GIVE ME THE ADDRESS FROM WHERE THEY WANT TO ATTACK US?", "you win", true), nil
 	case "crackme-npc":
 		return NewBinary("./internal/resources/dialogs/crackme", "hello!", "gj", false), nil
+	case "guess-npc":
+		return NewGuess("hello")
 	case "steve-npc":
 		return NewSteve(), nil
 	case "khajiit-npc":
