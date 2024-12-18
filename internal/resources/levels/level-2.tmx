@@ -661,6 +661,7 @@
   </object>
   <object id="184" name="boss-v1" type="boss" x="2024.1" y="1746.39" width="163.602" height="170.528">
    <properties>
+    <property name="item" value="glass"/>
     <property name="sprite" value="guinea"/>
    </properties>
   </object>
