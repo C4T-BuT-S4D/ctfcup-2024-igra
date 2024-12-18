@@ -631,10 +631,10 @@
   <object id="3" type="player_spawn" x="640" y="1120">
    <point/>
   </object>
-  <object id="155" name="cup" type="item" x="1120" y="160" width="32" height="32">
+  <object id="155" name="glass" type="item" x="1120" y="160" width="32" height="32">
    <properties>
     <property name="important" type="bool" value="true"/>
-    <property name="sprite" value="cup"/>
+    <property name="sprite" value="glass"/>
    </properties>
   </object>
   <object id="174" name="boss-entrance" type="portal" x="1664" y="1120" width="32" height="32">
