@@ -1,7 +1,6 @@
 package arcade
 
 import (
-	"fmt"
 	"image/color"
 	"math/rand"
 	"slices"
@@ -68,7 +67,7 @@ func (s *Snake) spawnApple() {
 		}
 	}
 
-	s.apple = &emptyCells[rand.Intn(len(emptyCells)-1)]
+	s.apple = &emptyCells[rand.Intn(len(emptyCells))]
 	s.screen[s.apple.y][s.apple.x] = snakeApple
 }
 
@@ -110,7 +109,6 @@ func (s *Snake) Feed(keys []ebiten.Key) error {
 		x: s.snake[len(s.snake)-1].x + delta.x,
 		y: s.snake[len(s.snake)-1].y + delta.y,
 	}
-	fmt.Println(newCoord)
 
 	if newCoord.x < 0 || newCoord.x >= SnakeScreenW || newCoord.y < 0 || newCoord.y >= SnakeScreenH {
 		s.lost = true
@@ -131,9 +129,10 @@ func (s *Snake) Feed(keys []ebiten.Key) error {
 	s.screen[newCoord.y][newCoord.x] = snakeSnake
 	if len(s.snake) == SnakeScreenH*SnakeScreenW {
 		s.won = true
+		return nil
 	}
 
-	if s.apple == nil && !(s.won || s.lost) {
+	if s.apple == nil {
 		s.spawnApple()
 	}
 
@@ -188,19 +187,15 @@ func (s *Snake) State() *State {
 	}
 	for y := 0; y < ScreenSize; y++ {
 		for x := 0; x < ScreenSize; x++ {
-			if y < SnakeScreenH && x < SnakeScreenW {
-				switch s.screen[y][x] {
-				case snakeSnake:
-					state.Screen[y][x] = color.RGBA{0, 255, 0, 255}
-				case snakeApple:
-					state.Screen[y][x] = color.RGBA{255, 0, 0, 255}
-				case snakeEmpty:
-					state.Screen[y][x] = color.RGBA{255, 255, 255, 255}
-				default:
-					state.Screen[y][x] = color.RGBA{255, 255, 255, 255}
-				}
-			} else {
-				state.Screen[y][x] = color.RGBA{0, 0, 0, 255}
+			switch s.screen[y*SnakeScreenH/ScreenSize][x*SnakeScreenW/ScreenSize] {
+			case snakeSnake:
+				state.Screen[y][x] = color.RGBA{0, 240, 100, 255}
+			case snakeApple:
+				state.Screen[y][x] = color.RGBA{255, 0, 0, 255}
+			case snakeEmpty:
+				state.Screen[y][x] = color.RGBA{255, 255, 255, 255}
+			default:
+				state.Screen[y][x] = color.RGBA{255, 255, 255, 255}
 			}
 		}
 	}
