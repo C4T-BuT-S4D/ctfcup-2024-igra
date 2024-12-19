@@ -693,9 +693,19 @@ func (e *Engine) drawNPCDialog(screen *ebiten.Image) {
 	vector.DrawFilledRect(screen, ibx, iby, float32(ibw), float32(ibh), color.Black, false)
 
 	// Draw dialog NPC image.
+	iw, ih := e.activeNPC.DialogImage.Bounds().Dx(), e.activeNPC.DialogImage.Bounds().Dy()
+	wantHeight := camera.HEIGHT / 2
+	scaleH := float64(wantHeight) / float64(ih)
+	wantWidth := int(float64(iw) * scaleH)
+	tx, ty := camera.WIDTH/2+camera.WIDTH/8, camera.HEIGHT/2-camera.HEIGHT/16
+
 	op := &ebiten.DrawImageOptions{}
-	op.GeoM.Translate(camera.WIDTH/2+camera.WIDTH/8, camera.HEIGHT/2)
-	screen.DrawImage(e.activeNPC.DialogImage, op)
+	scaledImg := ebiten.NewImage(wantWidth, wantHeight)
+	op.GeoM.Scale(scaleH, scaleH)
+	scaledImg.DrawImage(e.activeNPC.DialogImage, op)
+	op.GeoM.Reset()
+	op.GeoM.Translate(float64(tx), float64(ty))
+	screen.DrawImage(scaledImg, op)
 
 	// Draw dialog text.
 	dtx, dty := float64(ibx+camera.WIDTH/32), float64(iby+camera.HEIGHT/32)
