@@ -60,7 +60,8 @@ type snapshotItem struct {
 }
 
 type snapshotEngine struct {
-	Items []snapshotItem `json:"items"`
+	Items     []snapshotItem `json:"items"`
+	CreatedAt time.Time      `json:"created_at"`
 }
 
 func readConfig(configPath string) (*Config, error) {
@@ -131,16 +132,6 @@ func getScoreboard(cfg *Config) ([]TeamScore, error) {
 			collectedAt := make(map[string]time.Time)
 
 			for _, sp := range levelSnapshots {
-				parts := strings.Split(path.Base(sp), "_")
-				if len(parts) < 3 {
-					return nil, fmt.Errorf("invalid snapshot filename: %s", sp)
-				}
-				dt := parts[2]
-
-				t, err := time.Parse("2006-01-02T15:04:05.999999999", dt)
-				if err != nil {
-					return nil, fmt.Errorf("parsing snapshot time: %w", err)
-				}
 
 				var e snapshotEngine
 				f, err := os.Open(sp)
@@ -162,7 +153,7 @@ func getScoreboard(cfg *Config) ([]TeamScore, error) {
 					}
 					// Only update collectedAt if it was not collected before.
 					if it.Collected && collectedAt[it.Name].IsZero() {
-						collectedAt[it.Name] = t
+						collectedAt[it.Name] = e.CreatedAt
 					}
 				}
 			}
