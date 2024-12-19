@@ -843,13 +843,6 @@ func (e *Engine) Draw(screen *ebiten.Image) {
 			index++
 		}
 
-		tickTxt := fmt.Sprintf("Tick: %d", e.Tick)
-		textOp = &text.DrawOptions{}
-		textOp.GeoM.Translate(start, start+step*index)
-		textOp.ColorScale.ScaleWithColor(color.RGBA{R: 0, G: 255, B: 0, A: 255})
-		text.Draw(screen, tickTxt, face, textOp)
-		index++
-
 		coinsTxt := fmt.Sprintf("Coins: %d", e.Player.Coins)
 		textOp = &text.DrawOptions{}
 		textOp.GeoM.Translate(start, start+step*index)
