@@ -563,6 +563,7 @@ func (e *Engine) Reset() {
 	e.notificationEndTick = 0
 	e.EnemyBullets = nil
 	e.Tick = 0
+	e.Player.ResetCoyote()
 
 	e.BossEntered = false
 	if e.Boss != nil {
