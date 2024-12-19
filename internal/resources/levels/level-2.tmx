@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<map version="1.10" tiledversion="1.11.0" orientation="orthogonal" renderorder="right-down" width="400" height="300" tilewidth="32" tileheight="32" infinite="0" nextlayerid="15" nextobjectid="199">
+<map version="1.10" tiledversion="1.11.0" orientation="orthogonal" renderorder="right-down" width="400" height="300" tilewidth="32" tileheight="32" infinite="0" nextlayerid="15" nextobjectid="200">
  <properties>
   <property name="background" value="bg"/>
  </properties>
@@ -660,7 +660,12 @@
     <property name="sprite" value="podorozhnik"/>
    </properties>
   </object>
-  <object id="183" name="boss-exit" type="portal" x="1728" y="1665" width="32" height="32">
+  <object id="183" name="boss-win-point" type="boss-win" x="1792.07" y="2078.85" width="32" height="32">
+   <properties>
+    <property name="portal-to" value="boss-entrance"/>
+   </properties>
+  </object>
+  <object id="199" name="boss-exit" type="portal" x="1728" y="1659.81" width="32" height="32">
    <properties>
     <property name="portal-to" value="boss-entrance"/>
    </properties>
