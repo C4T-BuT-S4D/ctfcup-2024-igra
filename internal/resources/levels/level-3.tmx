@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<map version="1.10" tiledversion="1.11.0" orientation="orthogonal" renderorder="right-down" width="400" height="300" tilewidth="32" tileheight="32" infinite="0" nextlayerid="14" nextobjectid="501">
+<map version="1.10" tiledversion="1.11.0" orientation="orthogonal" renderorder="right-down" width="400" height="300" tilewidth="32" tileheight="32" infinite="0" nextlayerid="14" nextobjectid="530">
  <properties>
   <property name="background" value="bg"/>
  </properties>
@@ -1717,9 +1717,9 @@
   </object>
   <object id="390" name="boss-platform-4" type="platform" x="3114.47" y="1932.21" width="186" height="17">
    <properties>
-    <property name="distance" type="int" value="20"/>
-    <property name="path" value="vertical"/>
-    <property name="speed" type="int" value="16"/>
+    <property name="distance" type="int" value="200"/>
+    <property name="path" value="circular"/>
+    <property name="speed" type="int" value="4"/>
    </properties>
   </object>
   <object id="391" name="boss-platform-5" type="platform" x="3353.71" y="2227.28" width="186" height="17">
@@ -2162,7 +2162,7 @@
    <properties>
     <property name="distance" type="int" value="50"/>
     <property name="path" value="vertical"/>
-    <property name="speed" type="int" value="20"/>
+    <property name="speed" type="int" value="10"/>
    </properties>
   </object>
   <object id="495" name="boss-platform-1" type="platform" x="3470.88" y="1695.55" width="186" height="17">
@@ -2181,9 +2181,9 @@
   </object>
   <object id="497" name="boss-platform-1" type="platform" x="3777.63" y="1843.04" width="186" height="17">
    <properties>
-    <property name="distance" type="int" value="300"/>
-    <property name="path" value="horizontal"/>
-    <property name="speed" type="int" value="2"/>
+    <property name="distance" type="int" value="200"/>
+    <property name="path" value="circular"/>
+    <property name="speed" type="int" value="1"/>
    </properties>
   </object>
   <object id="498" name="boss-platform-2" type="platform" x="4066.07" y="2163.29" width="186" height="17">
@@ -2201,5 +2201,145 @@
    </properties>
   </object>
   <object id="500" name="boss-win-point" type="boss-win" x="3568.31" y="1600.12" width="32" height="32"/>
+  <object id="501" name="spike-l3" type="spike" x="2944" y="1472" width="32" height="32">
+   <properties>
+    <property name="direction" value="down"/>
+   </properties>
+  </object>
+  <object id="502" name="spike-l3" type="spike" x="2976" y="1472" width="32" height="32">
+   <properties>
+    <property name="direction" value="down"/>
+   </properties>
+  </object>
+  <object id="503" name="spike-l3" type="spike" x="3008" y="1472" width="32" height="32">
+   <properties>
+    <property name="direction" value="down"/>
+   </properties>
+  </object>
+  <object id="504" name="spike-l3" type="spike" x="3040" y="1472" width="32" height="32">
+   <properties>
+    <property name="direction" value="down"/>
+   </properties>
+  </object>
+  <object id="505" name="spike-l3" type="spike" x="3104" y="1472" width="32" height="32">
+   <properties>
+    <property name="direction" value="down"/>
+   </properties>
+  </object>
+  <object id="506" name="spike-l3" type="spike" x="3136" y="1472" width="32" height="32">
+   <properties>
+    <property name="direction" value="down"/>
+   </properties>
+  </object>
+  <object id="507" name="spike-l3" type="spike" x="3168" y="1472" width="32" height="32">
+   <properties>
+    <property name="direction" value="down"/>
+   </properties>
+  </object>
+  <object id="508" name="spike-l3" type="spike" x="3200" y="1472" width="32" height="32">
+   <properties>
+    <property name="direction" value="down"/>
+   </properties>
+  </object>
+  <object id="509" name="spike-l3" type="spike" x="3296" y="1472" width="32" height="32">
+   <properties>
+    <property name="direction" value="down"/>
+   </properties>
+  </object>
+  <object id="510" name="spike-l3" type="spike" x="3328" y="1472" width="32" height="32">
+   <properties>
+    <property name="direction" value="down"/>
+   </properties>
+  </object>
+  <object id="511" name="spike-l3" type="spike" x="3360" y="1472" width="32" height="32">
+   <properties>
+    <property name="direction" value="down"/>
+   </properties>
+  </object>
+  <object id="512" name="spike-l3" type="spike" x="3392" y="1472" width="32" height="32">
+   <properties>
+    <property name="direction" value="down"/>
+   </properties>
+  </object>
+  <object id="513" name="spike-l3" type="spike" x="3520" y="1472" width="32" height="32">
+   <properties>
+    <property name="direction" value="down"/>
+   </properties>
+  </object>
+  <object id="514" name="spike-l3" type="spike" x="3552" y="1472" width="32" height="32">
+   <properties>
+    <property name="direction" value="down"/>
+   </properties>
+  </object>
+  <object id="515" name="spike-l3" type="spike" x="3584" y="1472" width="32" height="32">
+   <properties>
+    <property name="direction" value="down"/>
+   </properties>
+  </object>
+  <object id="516" name="spike-l3" type="spike" x="3616" y="1472" width="32" height="32">
+   <properties>
+    <property name="direction" value="down"/>
+   </properties>
+  </object>
+  <object id="518" name="spike-l3" type="spike" x="3776" y="1472" width="32" height="32">
+   <properties>
+    <property name="direction" value="down"/>
+   </properties>
+  </object>
+  <object id="519" name="spike-l3" type="spike" x="3808" y="1472" width="32" height="32">
+   <properties>
+    <property name="direction" value="down"/>
+   </properties>
+  </object>
+  <object id="520" name="spike-l3" type="spike" x="3840" y="1472" width="32" height="32">
+   <properties>
+    <property name="direction" value="down"/>
+   </properties>
+  </object>
+  <object id="521" name="spike-l3" type="spike" x="3872" y="1472" width="32" height="32">
+   <properties>
+    <property name="direction" value="down"/>
+   </properties>
+  </object>
+  <object id="522" name="spike-l3" type="spike" x="4032" y="1472" width="32" height="32">
+   <properties>
+    <property name="direction" value="down"/>
+   </properties>
+  </object>
+  <object id="523" name="spike-l3" type="spike" x="4064" y="1472" width="32" height="32">
+   <properties>
+    <property name="direction" value="down"/>
+   </properties>
+  </object>
+  <object id="524" name="spike-l3" type="spike" x="4096" y="1472" width="32" height="32">
+   <properties>
+    <property name="direction" value="down"/>
+   </properties>
+  </object>
+  <object id="525" name="spike-l3" type="spike" x="4128" y="1472" width="32" height="32">
+   <properties>
+    <property name="direction" value="down"/>
+   </properties>
+  </object>
+  <object id="526" name="spike-l3" type="spike" x="4256" y="1472" width="32" height="32">
+   <properties>
+    <property name="direction" value="down"/>
+   </properties>
+  </object>
+  <object id="527" name="spike-l3" type="spike" x="4288" y="1472" width="32" height="32">
+   <properties>
+    <property name="direction" value="down"/>
+   </properties>
+  </object>
+  <object id="528" name="spike-l3" type="spike" x="4320" y="1472" width="32" height="32">
+   <properties>
+    <property name="direction" value="down"/>
+   </properties>
+  </object>
+  <object id="529" name="spike-l3" type="spike" x="4352" y="1472" width="32" height="32">
+   <properties>
+    <property name="direction" value="down"/>
+   </properties>
+  </object>
  </objectgroup>
 </map>

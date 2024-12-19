@@ -1,6 +1,9 @@
 package physics
 
 import (
+	"fmt"
+	"math"
+
 	"github.com/c4t-but-s4d/ctfcup-2024-igra/internal/geometry"
 	"github.com/c4t-but-s4d/ctfcup-2024-igra/internal/object"
 	"github.com/hajimehoshi/ebiten/v2"
@@ -11,13 +14,28 @@ type MovementPath int
 const (
 	PathVertical MovementPath = iota
 	PathHorizontal
+	PathCircular
 )
 
+func (p MovementPath) Vertical() bool {
+	return p == PathVertical || p == PathCircular
+}
+
+func (p MovementPath) Horizontal() bool {
+	return p == PathHorizontal || p == PathCircular
+}
+
 func ParsePath(path string) MovementPath {
-	if path == "vertical" {
+	switch path {
+	case "circular":
+		return PathCircular
+	case "vertical":
 		return PathVertical
+	case "horizontal":
+		return PathHorizontal
+	default:
+		panic(fmt.Errorf("unknown path: %s", path))
 	}
-	return PathHorizontal
 }
 
 type Physical struct {
@@ -52,31 +70,40 @@ type MovingObject struct {
 	// after the object reaches the end of the path,
 	// so its acceleration should be observable only on the next tick, too.
 	nextAcceleration geometry.Vector
-	start            float64
-	end              float64
+	start            geometry.Point
+	end              geometry.Point
+	mid              geometry.Point
 	static           bool
 	Path             MovementPath
 }
 
 func NewMovingObject(origin geometry.Point, width, height float64, image *ebiten.Image, path MovementPath, distance, speed int) *MovingObject {
-	start := origin.X
-	speedVector := geometry.Vector{X: float64(speed), Y: 0}
-	if path == PathVertical {
-		start = origin.Y - float64(distance) // swap start and end if vertical
-		speedVector = geometry.Vector{X: 0, Y: float64(speed)}
-	}
-
-	end := start + float64(distance)
-
-	return &MovingObject{
+	obj := &MovingObject{
 		Rendered:         object.NewRendered(origin, image, width, height),
-		Physical:         &Physical{Speed: speedVector, Acceleration: geometry.Vector{}},
+		Physical:         &Physical{Speed: geometry.Vector{X: 0, Y: 0}, Acceleration: geometry.Vector{}},
 		nextAcceleration: geometry.Vector{},
-		start:            start,
-		end:              end,
 		static:           speed == 0,
 		Path:             path,
 	}
+
+	switch path {
+	case PathVertical:
+		obj.start = geometry.Point{X: origin.X, Y: origin.Y - float64(distance)}
+		obj.end = geometry.Point{X: origin.X, Y: origin.Y}
+		obj.Physical.Speed = geometry.Vector{X: 0, Y: float64(speed)}
+	case PathHorizontal:
+		obj.start = geometry.Point{X: origin.X, Y: origin.Y}
+		obj.end = geometry.Point{X: origin.X + float64(distance), Y: origin.Y}
+		obj.Physical.Speed = geometry.Vector{X: float64(speed), Y: 0}
+	case PathCircular:
+		obj.Origin.X -= float64(distance) / 2
+		obj.start = geometry.Point{X: origin.X - float64(distance)/2, Y: origin.Y - float64(distance)/2}
+		obj.end = geometry.Point{X: origin.X + float64(distance)/2, Y: origin.Y + float64(distance)/2}
+		obj.mid = geometry.Point{X: origin.X, Y: origin.Y}
+		obj.Physical.Speed = geometry.Vector{X: float64(speed), Y: float64(speed)}
+	}
+
+	return obj
 }
 
 func (p *MovingObject) MoveX() {
@@ -87,8 +114,8 @@ func (p *MovingObject) MoveX() {
 	p.Acceleration.X = p.nextAcceleration.X
 	p.ApplyAccelerationX()
 	p.nextAcceleration.X = 0
-	if p.Path == PathHorizontal {
-		p.move()
+	if p.Path.Horizontal() {
+		p.moveX()
 	}
 }
 
@@ -100,35 +127,57 @@ func (p *MovingObject) MoveY() {
 	p.Acceleration.Y = p.nextAcceleration.Y
 	p.ApplyAccelerationY()
 	p.nextAcceleration.Y = 0
-	if p.Path == PathVertical {
-		p.move()
+	if p.Path.Vertical() {
+		p.moveY()
 	}
 }
 
-func (p *MovingObject) move() {
-	cur := p.Origin.Y
-	if p.Path == PathHorizontal {
-		cur = p.Origin.X
-	}
-
+func (p *MovingObject) moveX() {
+	cur := p.Origin.X
 	speed := p.Speed.X
-	if p.Path == PathVertical {
-		speed = p.Speed.Y
+
+	if p.Path == PathCircular {
+		if p.Origin.Y >= p.mid.Y {
+			speed = math.Abs(speed)
+		} else {
+			speed = -math.Abs(speed)
+		}
 	}
 
-	next := cur + float64(speed)
+	next := cur + speed
 	switch {
-	case speed > 0 && next >= p.end:
-		p.nextAcceleration = p.Speed.Neg().Multiply(2)
-		next = p.end
-	case speed < 0 && next <= p.start:
-		p.nextAcceleration = p.Speed.Neg().Multiply(2)
-		next = p.start
+	case speed > 0 && next >= p.end.X:
+		p.nextAcceleration.X = -speed * 2
+		next = p.end.X
+	case speed < 0 && next <= p.start.X:
+		p.nextAcceleration.X = -speed * 2
+		next = p.start.X
 	}
 
-	if p.Path == PathVertical {
-		p.Origin.Y = next
-	} else {
-		p.Origin.X = next
+	p.Origin.X = next
+}
+
+func (p *MovingObject) moveY() {
+	cur := p.Origin.Y
+	speed := p.Speed.Y
+
+	if p.Path == PathCircular {
+		if p.Origin.X >= p.mid.X {
+			speed = -math.Abs(speed)
+		} else {
+			speed = math.Abs(speed)
+		}
 	}
+
+	next := cur + speed
+	switch {
+	case speed > 0 && next >= p.end.Y:
+		p.nextAcceleration.Y = -speed * 2
+		next = p.end.Y
+	case speed < 0 && next <= p.start.Y:
+		p.nextAcceleration.Y = -speed * 2
+		next = p.start.Y
+	}
+
+	p.Origin.Y = next
 }
