@@ -100,7 +100,7 @@ func (g *Game) Draw(screen *ebiten.Image) {
 	if g.engine != nil {
 		g.engine.Draw(screen)
 	} else {
-		face := g.fontBundle.GetFontFace(resources.FontSouls)
+		face := g.fontBundle.GetFontFace(resources.FontSouls, camera.WIDTH/16)
 
 		c := color.RGBA{0xff, 0xff, 0xff, 0xff}
 		team := strings.Split(os.Getenv("AUTH_TOKEN"), ":")[0]
