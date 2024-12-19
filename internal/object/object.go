@@ -30,6 +30,10 @@ func (b *Base) MoveTo(p geometry.Point) *Base {
 	return b
 }
 
+func (b *Base) CollisionsDisabled() bool {
+	return false
+}
+
 type Rendered struct {
 	*Base
 	StaticImage *ebiten.Image `msgpack:"-"`
@@ -51,6 +55,7 @@ func (r *Rendered) Image() *ebiten.Image {
 }
 
 type Collidable interface {
+	CollisionsDisabled() bool
 	Rectangle() *geometry.Rectangle
 }
 

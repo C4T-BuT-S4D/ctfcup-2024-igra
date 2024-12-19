@@ -50,7 +50,7 @@ func Collide[O object.Collidable](r *geometry.Rectangle, objects []O) iter.Seq[O
 func Collide2[O1, O2 object.Collidable](r *geometry.Rectangle, o1s []O1, o2s []O2) iter.Seq[object.Collidable] {
 	return func(yield func(object.Collidable) bool) {
 		for i, o1 := range o1s {
-			if o1.Rectangle().Intersects(r) {
+			if !o1.CollisionsDisabled() && o1.Rectangle().Intersects(r) {
 				o1s[0], o1s[i] = o1s[i], o1s[0]
 				if !yield(o1) {
 					return
@@ -59,7 +59,7 @@ func Collide2[O1, O2 object.Collidable](r *geometry.Rectangle, o1s []O1, o2s []O
 		}
 
 		for i, o2 := range o2s {
-			if o2.Rectangle().Intersects(r) {
+			if !o2.CollisionsDisabled() && o2.Rectangle().Intersects(r) {
 				o2s[0], o2s[i] = o2s[i], o2s[0]
 				if !yield(o2) {
 					return

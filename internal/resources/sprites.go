@@ -9,16 +9,17 @@ import (
 type SpriteType string
 
 const (
-	SpriteSpikeUp    SpriteType = "spike_up"
-	SpriteSpikeDown  SpriteType = "spike_down"
-	SpriteSpikeLeft  SpriteType = "spike_left"
-	SpriteSpikeRight SpriteType = "spike_right"
-	SpritePlatform   SpriteType = "plat4m"
-	SpritePlayer     SpriteType = "player"
-	SpritePortal     SpriteType = "portal"
-	SpriteBullet     SpriteType = "bullet"
-	SpriteHP         SpriteType = "hp"
-	SpriteArcade     SpriteType = "arcade"
+	SpriteSpikeUp      SpriteType = "spike_up"
+	SpriteSpikeDown    SpriteType = "spike_down"
+	SpriteSpikeLeft    SpriteType = "spike_left"
+	SpriteSpikeRight   SpriteType = "spike_right"
+	SpritePlatform     SpriteType = "plat4m"
+	SpritePlatformWide SpriteType = "plat4m_wide"
+	SpritePlayer       SpriteType = "player"
+	SpritePortal       SpriteType = "portal"
+	SpriteBullet       SpriteType = "bullet"
+	SpriteHP           SpriteType = "hp"
+	SpriteArcade       SpriteType = "arcade"
 )
 
 type SpriteBundle struct {

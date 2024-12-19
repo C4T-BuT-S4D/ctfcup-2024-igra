@@ -207,17 +207,18 @@ func New(config Config, resourceBundle *resources.Bundle, dialogProvider dialog.
 	}
 
 	var (
-		items        []*item.Item
-		spikes       []*damage.Spike
-		platforms    []*platform.Platform
-		npcs         []*npc.NPC
-		arcades      []*arcade.Machine
-		slots        []*casino.SlotMachine
-		bossObj      boss.BOSS
-		bossItemName string
-		bossItem     *item.Item
-		bossPortal   *portal.Portal
-		bossWinPoint *geometry.Point
+		items         []*item.Item
+		spikes        []*damage.Spike
+		platforms     []*platform.Platform
+		npcs          []*npc.NPC
+		arcades       []*arcade.Machine
+		slots         []*casino.SlotMachine
+		bossObj       boss.BOSS
+		bossItemName  string
+		bossItem      *item.Item
+		bossPortal    *portal.Portal
+		bossWinPoint  *geometry.Point
+		bossPlatforms []*platform.Platform
 	)
 	portalsMap := make(map[string]*portal.Portal)
 
@@ -284,6 +285,9 @@ func New(config Config, resourceBundle *resources.Bundle, dialogProvider dialog.
 					o.Properties.GetInt("speed"),
 				))
 			case "platform":
+				sprite := lo.
+					If(strings.HasPrefix(o.Name, "boss"), resources.SpritePlatformWide).
+					Else(resources.SpritePlatform)
 				platforms = append(platforms, platform.New(
 					geometry.Point{
 						X: o.X,
@@ -291,11 +295,14 @@ func New(config Config, resourceBundle *resources.Bundle, dialogProvider dialog.
 					},
 					o.Width,
 					o.Height,
-					resourceBundle.GetSprite(resources.SpritePlatform),
+					resourceBundle.GetSprite(sprite),
 					physics.ParsePath(o.Properties.GetString("path")),
 					o.Properties.GetInt("distance"),
 					o.Properties.GetInt("speed"),
 				))
+				if strings.HasPrefix(o.Name, "boss") {
+					bossPlatforms = append(bossPlatforms, platforms[len(platforms)-1])
+				}
 			case "npc":
 				img := resourceBundle.GetSprite(resources.SpriteType(o.Properties.GetString("sprite")))
 				dimg := resourceBundle.GetSprite(resources.SpriteType(o.Properties.GetString("dialog-sprite")))
@@ -320,19 +327,36 @@ func New(config Config, resourceBundle *resources.Bundle, dialogProvider dialog.
 			case "boss":
 				img := resourceBundle.GetSprite(resources.SpriteType(o.Properties.GetString("sprite")))
 				bulletImg := resourceBundle.GetSprite(resources.SpriteBullet)
-				bossObj = boss.NewV1(
-					object.NewRendered(
-						geometry.Point{
-							X: o.X,
-							Y: o.Y,
-						},
-						img,
-						o.Width,
-						o.Height,
-					),
-					bulletImg,
-				)
-				bossItemName = o.Properties.GetString("item")
+				if o.Name == "v2" {
+					bossObj = boss.NewV2(
+						object.NewRendered(
+							geometry.Point{
+								X: o.X,
+								Y: o.Y,
+							},
+							img,
+							o.Width,
+							o.Height,
+						),
+						bulletImg,
+					)
+					// FIXME: real item.
+					bossItemName = "finka"
+				} else {
+					bossObj = boss.NewV1(
+						object.NewRendered(
+							geometry.Point{
+								X: o.X,
+								Y: o.Y,
+							},
+							img,
+							o.Width,
+							o.Height,
+						),
+						bulletImg,
+					)
+					bossItemName = o.Properties.GetString("item")
+				}
 			case "slots":
 				img := resourceBundle.GetSprite(resources.SpriteType(o.Properties.GetString("sprite")))
 				slotMachine := casino.NewSlotMachine(
@@ -375,6 +399,10 @@ func New(config Config, resourceBundle *resources.Bundle, dialogProvider dialog.
 			return i.Name == bossItemName
 		})
 		bossPortal = portalsMap["boss-exit"]
+	}
+
+	if b, ok := bossObj.(*boss.V2); ok {
+		b.SetPlatforms(bossPlatforms)
 	}
 
 	for _, n := range npcs {
