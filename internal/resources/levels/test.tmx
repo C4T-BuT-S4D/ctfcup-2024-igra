@@ -4,7 +4,7 @@
   <property name="background" value="bg"/>
  </properties>
  <tileset firstgid="1" source="../tiles/outdoor.tsx"/>
- <imagelayer id="7" name="main_background" offsetx="350" offsety="360">
+ <imagelayer id="7" name="main_background" offsetx="350" offsety="385">
   <image source="../tiles/street2.png" width="1456" height="816"/>
  </imagelayer>
  <imagelayer id="8" name="bunker_background" offsetx="2500" offsety="760">

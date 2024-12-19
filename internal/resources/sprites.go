@@ -18,7 +18,6 @@ const (
 	SpritePortal     SpriteType = "portal"
 	SpriteBullet     SpriteType = "bullet"
 	SpriteHP         SpriteType = "hp"
-	SpriteBG         SpriteType = "bg"
 	SpriteArcade     SpriteType = "arcade"
 )
 
