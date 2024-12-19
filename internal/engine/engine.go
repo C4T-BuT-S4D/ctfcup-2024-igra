@@ -510,7 +510,8 @@ func NewFromSnapshot(config Config, snapshot *Snapshot, resourceBundle *resource
 }
 
 type Snapshot struct {
-	Items []*item.Item `json:"items"`
+	Items     []*item.Item `json:"items"`
+	CreatedAt time.Time    `json:"created_at"`
 }
 
 func NewSnapshotFromProto(proto *gameserverpb.EngineSnapshot) (*Snapshot, error) {
@@ -571,7 +572,8 @@ func (e *Engine) Reset() {
 
 func (e *Engine) MakeSnapshot() *Snapshot {
 	return &Snapshot{
-		Items: e.Items,
+		Items:     e.Items,
+		CreatedAt: time.Now().UTC(),
 	}
 }
 
@@ -585,7 +587,7 @@ func (e *Engine) SaveSnapshot(snapshot *Snapshot) error {
 		return err
 	}
 
-	filename := fmt.Sprintf("snapshot_%s_%s", e.Level, time.Now().UTC().Format("2006-01-02T15:04:05.999999999"))
+	filename := fmt.Sprintf("snapshot_%s_%s", e.Level, snapshot.CreatedAt.Format("2006-01-02T15:04:05.999999999"))
 
 	if err := os.WriteFile(filepath.Join(e.snapshotsDir, filename), data, 0o400); err != nil {
 		return fmt.Errorf("writing snapshot file: %w", err)
@@ -813,7 +815,7 @@ func (e *Engine) Draw(screen *ebiten.Image) {
 		if bossHealth != nil && bossHealth.Health > 0 {
 			op := &ebiten.DrawImageOptions{}
 			width := float64(camera.WIDTH) * float64(bossHealth.Health) / float64(bossHealth.MaxHealth)
-			op.GeoM.Scale(width, 32)
+			op.GeoM.Scale(width, camera.HEIGHT/30)
 			op.GeoM.Translate((float64(camera.WIDTH)-width)/2, 0)
 
 			bossHpImage := e.resourceBundle.GetSprite(resources.SpriteHP)
