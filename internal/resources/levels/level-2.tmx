@@ -643,7 +643,7 @@
     <property name="sprite" value="glass"/>
    </properties>
   </object>
-  <object id="174" name="boss-entrance" type="portal" x="1664" y="1120" width="32" height="32">
+  <object id="174" name="boss-entrance" type="portal" x="1598.2" y="1050.74" width="32" height="32">
    <properties>
     <property name="boss" value="v1"/>
     <property name="portal-to" value="boss-exit"/>
