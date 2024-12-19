@@ -853,8 +853,7 @@ func (e *Engine) Draw(screen *ebiten.Image) {
 
 		for i, it := range e.Player.Inventory.Items {
 			itemX := e.Camera.Width - float64(i+1)*72
-			itemY := 72
-
+			itemY := camera.HEIGHT / 20
 			vector.StrokeRect(screen, float32(itemX-4), float32(itemY-4), 40, 40, 2, color.RGBA{R: 230, G: 230, B: 230, A: 255}, false)
 			vector.DrawFilledRect(screen, float32(itemX-4), float32(itemY-4), 40, 40, color.RGBA{R: 156, G: 150, B: 138, A: 196}, false)
 

@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<map version="1.10" tiledversion="1.11.0" orientation="orthogonal" renderorder="right-down" width="400" height="300" tilewidth="32" tileheight="32" infinite="0" nextlayerid="14" nextobjectid="530">
+<map version="1.10" tiledversion="1.11.0" orientation="orthogonal" renderorder="right-down" width="400" height="300" tilewidth="32" tileheight="32" infinite="0" nextlayerid="14" nextobjectid="532">
  <properties>
   <property name="background" value="bg"/>
  </properties>
@@ -1670,7 +1670,7 @@
     <property name="direction" value="down"/>
    </properties>
   </object>
-  <object id="385" name="rop-npc" type="npc" x="1664" y="1088" width="64" height="64">
+  <object id="385" name="rop-npc" type="npc" x="2912" y="1024" width="64" height="64">
    <properties>
     <property name="dialog-sprite" value="oleg"/>
     <property name="item" value="finka"/>
@@ -1721,7 +1721,7 @@
   <object id="392" name="v2" type="boss" x="4172.04" y="1823.49" width="186.468" height="188.927">
    <properties>
     <property name="item" value="cross"/>
-    <property name="sprite" value="guinea"/>
+    <property name="sprite" value="grinch"/>
    </properties>
   </object>
   <object id="393" name="boss-entrance" type="portal" x="1184" y="928" width="64" height="64">
@@ -2329,6 +2329,18 @@
   <object id="529" name="spike-l3" type="spike" x="4352" y="1472" width="32" height="32">
    <properties>
     <property name="direction" value="down"/>
+   </properties>
+  </object>
+  <object id="530" name="npc_entrance" type="portal" x="1728" y="1120" width="32" height="32">
+   <properties>
+    <property name="portal-to" value="npc_room"/>
+    <property name="sprite" value="door_w"/>
+   </properties>
+  </object>
+  <object id="531" name="npc_room" type="portal" x="2560" y="1088" width="32" height="32">
+   <properties>
+    <property name="portal-to" value="npc_entrance"/>
+    <property name="sprite" value="door_w"/>
    </properties>
   </object>
  </objectgroup>
