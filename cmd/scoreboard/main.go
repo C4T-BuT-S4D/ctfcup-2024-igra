@@ -132,7 +132,7 @@ func getScoreboard(cfg *Config) ([]TeamScore, error) {
 
 			for _, sp := range levelSnapshots {
 				parts := strings.Split(path.Base(sp), "_")
-				if len(parts) != 3 {
+				if len(parts) < 3 {
 					return nil, fmt.Errorf("invalid snapshot filename: %s", sp)
 				}
 				dt := parts[2]
