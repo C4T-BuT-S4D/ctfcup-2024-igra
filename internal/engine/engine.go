@@ -8,16 +8,15 @@ import (
 	"errors"
 	"fmt"
 	"image/color"
-	"math"
-	"strconv"
-
 	// Register png codec.
 	_ "image/png"
+	"math"
 	"math/rand/v2"
 	"os"
 	"path"
 	"path/filepath"
 	"slices"
+	"strconv"
 	"strings"
 	"time"
 
@@ -78,8 +77,11 @@ type Engine struct {
 	EnemyBullets     []*damage.Bullet         `json:"-" msgpack:"enemyBullets"`
 	BackgroundImages []*tiles.BackgroundImage `json:"-" msgpack:"backgroundImages"`
 
-	BossEntered bool      `json:"-" msgpack:"bossEntered"`
-	Boss        boss.BOSS `json:"-" msgpack:"boss"`
+	BossEntered  bool            `json:"-" msgpack:"bossEntered"`
+	Boss         boss.BOSS       `json:"-" msgpack:"boss"`
+	BossItem     *item.Item      `json:"-" msgpack:"bossItem"`
+	BossPortal   *portal.Portal  `json:"-" msgpack:"bossPortal"`
+	BossWinPoint *geometry.Point `json:"-" msgpack:"bossWinPoint"`
 
 	StartSnapshot *Snapshot `json:"-" msgpack:"-"`
 
@@ -205,15 +207,18 @@ func New(config Config, resourceBundle *resources.Bundle, dialogProvider dialog.
 	}
 
 	var (
-		items     []*item.Item
-		spikes    []*damage.Spike
-		platforms []*platform.Platform
-		npcs      []*npc.NPC
-		arcades   []*arcade.Machine
-		slots     []*casino.SlotMachine
-		bossObj   boss.BOSS
+		items        []*item.Item
+		spikes       []*damage.Spike
+		platforms    []*platform.Platform
+		npcs         []*npc.NPC
+		arcades      []*arcade.Machine
+		slots        []*casino.SlotMachine
+		bossObj      boss.BOSS
+		bossItemName string
+		bossItem     *item.Item
+		bossPortal   *portal.Portal
+		bossWinPoint *geometry.Point
 	)
-	winPoints := make(map[string]*geometry.Point)
 	portalsMap := make(map[string]*portal.Portal)
 
 	for _, og := range tmap.ObjectGroups {
@@ -311,7 +316,7 @@ func New(config Config, resourceBundle *resources.Bundle, dialogProvider dialog.
 					o.Properties.GetString("item"),
 				))
 			case "boss-win":
-				winPoints[o.Name] = &geometry.Point{X: o.X, Y: o.Y}
+				bossWinPoint = &geometry.Point{X: o.X, Y: o.Y}
 			case "boss":
 				img := resourceBundle.GetSprite(resources.SpriteType(o.Properties.GetString("sprite")))
 				bulletImg := resourceBundle.GetSprite(resources.SpriteBullet)
@@ -327,6 +332,7 @@ func New(config Config, resourceBundle *resources.Bundle, dialogProvider dialog.
 					),
 					bulletImg,
 				)
+				bossItemName = o.Properties.GetString("item")
 			case "slots":
 				img := resourceBundle.GetSprite(resources.SpriteType(o.Properties.GetString("sprite")))
 				slotMachine := casino.NewSlotMachine(
@@ -362,6 +368,13 @@ func New(config Config, resourceBundle *resources.Bundle, dialogProvider dialog.
 				))
 			}
 		}
+	}
+
+	if bossItemName != "" {
+		bossItem, _ = lo.Find(items, func(i *item.Item) bool {
+			return i.Name == bossItemName
+		})
+		bossPortal = portalsMap["boss-exit"]
 	}
 
 	for _, n := range npcs {
@@ -425,6 +438,9 @@ func New(config Config, resourceBundle *resources.Bundle, dialogProvider dialog.
 		Platforms:        platforms,
 		NPCs:             npcs,
 		Boss:             bossObj,
+		BossItem:         bossItem,
+		BossPortal:       bossPortal,
+		BossWinPoint:     bossWinPoint,
 		Arcades:          arcades,
 		Slots:            slots,
 		resourceBundle:   resourceBundle,
@@ -1137,6 +1153,7 @@ func (e *Engine) CheckPortals() {
 
 		if p.Boss != "" {
 			e.BossEntered = true
+			e.BossPortal.MoveTo(geometry.Point{X: -9999, Y: -9999})
 		}
 	}
 }
@@ -1158,7 +1175,7 @@ func (e *Engine) CheckEnemyBullets() {
 	rnd := rand.New(rand.NewPCG(0, uint64(e.Tick)))
 	for _, b := range e.EnemyBullets {
 		if b.PlayerSeekSpeed > 0 {
-			b.Direction = e.Player.Origin.SubPoint(b.Origin).Normalize().Multiply(b.PlayerSeekSpeed)
+			b.Direction = e.Player.Rectangle().Center().SubPoint(b.Origin).Normalize().Multiply(b.PlayerSeekSpeed)
 			dx := (rnd.Float64() - 0.5) / 3
 			dy := (rnd.Float64() - 0.5) / 3
 			b.Direction = b.Direction.Add(geometry.Vector{X: dx, Y: dy})
@@ -1193,6 +1210,12 @@ func (e *Engine) CheckBoss() {
 	}
 
 	res := e.Boss.Tick(&boss.TickState{CurrentTick: e.Tick})
+
+	if res.Dead {
+		e.BossItem.MoveTo(*e.BossWinPoint)
+		e.BossPortal.MoveTo(e.BossWinPoint.Add(geometry.Vector{X: -e.BossPortal.Width, Y: 0}))
+	}
+
 	e.EnemyBullets = append(e.EnemyBullets, res.Bullets...)
 }
 

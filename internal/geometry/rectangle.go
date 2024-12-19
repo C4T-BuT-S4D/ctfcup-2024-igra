@@ -7,51 +7,58 @@ type Rectangle struct {
 	BottomY float64
 }
 
-func (a *Rectangle) Extended(delta float64) *Rectangle {
+func (r *Rectangle) Extended(delta float64) *Rectangle {
 	return &Rectangle{
-		LeftX:   a.LeftX - delta,
-		TopY:    a.TopY - delta,
-		RightX:  a.RightX + delta,
-		BottomY: a.BottomY + delta,
+		LeftX:   r.LeftX - delta,
+		TopY:    r.TopY - delta,
+		RightX:  r.RightX + delta,
+		BottomY: r.BottomY + delta,
 	}
 }
 
-func (a *Rectangle) AddVector(other *Vector) *Rectangle {
-	return &Rectangle{
-		LeftX:   a.LeftX + other.X,
-		TopY:    a.TopY + other.Y,
-		RightX:  a.RightX + other.X,
-		BottomY: a.BottomY + other.Y,
+func (r *Rectangle) Center() Point {
+	return Point{
+		X: (r.LeftX + r.RightX) / 2,
+		Y: (r.TopY + r.BottomY) / 2,
 	}
 }
 
-func (a *Rectangle) Sub(other *Rectangle) Vector {
+func (r *Rectangle) AddVector(other *Vector) *Rectangle {
+	return &Rectangle{
+		LeftX:   r.LeftX + other.X,
+		TopY:    r.TopY + other.Y,
+		RightX:  r.RightX + other.X,
+		BottomY: r.BottomY + other.Y,
+	}
+}
+
+func (r *Rectangle) Sub(other *Rectangle) Vector {
 	return Vector{
-		X: a.LeftX - other.LeftX,
-		Y: a.TopY - other.TopY,
+		X: r.LeftX - other.LeftX,
+		Y: r.TopY - other.TopY,
 	}
 }
 
-func (a *Rectangle) Intersects(b *Rectangle) bool {
-	return a.RightX > b.LeftX && b.RightX > a.LeftX && a.BottomY > b.TopY && b.BottomY > a.TopY
+func (r *Rectangle) Intersects(b *Rectangle) bool {
+	return r.RightX > b.LeftX && b.RightX > r.LeftX && r.BottomY > b.TopY && b.BottomY > r.TopY
 }
 
-func (a *Rectangle) PushVectorX(b *Rectangle) Vector {
-	return a.pushVector(b, []Vector{
-		{X: a.RightX - b.LeftX, Y: 0},
-		{X: a.LeftX - b.RightX, Y: 0},
-	}, Vector{X: a.RightX - b.RightX, Y: a.LeftX - b.LeftX})
+func (r *Rectangle) PushVectorX(b *Rectangle) Vector {
+	return r.pushVector(b, []Vector{
+		{X: r.RightX - b.LeftX, Y: 0},
+		{X: r.LeftX - b.RightX, Y: 0},
+	}, Vector{X: r.RightX - b.RightX, Y: r.LeftX - b.LeftX})
 }
 
-func (a *Rectangle) PushVectorY(b *Rectangle) Vector {
-	return a.pushVector(b, []Vector{
-		{X: 0, Y: a.BottomY - b.TopY},
-		{X: 0, Y: a.TopY - b.BottomY},
-	}, Vector{X: a.BottomY - b.BottomY, Y: a.TopY - b.TopY})
+func (r *Rectangle) PushVectorY(b *Rectangle) Vector {
+	return r.pushVector(b, []Vector{
+		{X: 0, Y: r.BottomY - b.TopY},
+		{X: 0, Y: r.TopY - b.BottomY},
+	}, Vector{X: r.BottomY - b.BottomY, Y: r.TopY - b.TopY})
 }
 
-func (a *Rectangle) pushVector(b *Rectangle, vecs []Vector, check Vector) Vector {
-	if !a.Intersects(b) || check.Length() < 1e-6 {
+func (r *Rectangle) pushVector(b *Rectangle, vecs []Vector, check Vector) Vector {
+	if !r.Intersects(b) || check.Length() < 1e-6 {
 		return Vector{}
 	}
 

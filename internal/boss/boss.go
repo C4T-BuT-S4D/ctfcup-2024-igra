@@ -20,6 +20,8 @@ type HealthState struct {
 }
 
 type BOSS interface {
+	object.Collidable
+
 	Object() *object.Rendered
 	Tick(s *TickState) *TickResult
 	Health() *HealthState

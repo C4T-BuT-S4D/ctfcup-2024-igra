@@ -3,6 +3,7 @@ package engine
 import (
 	"iter"
 
+	"github.com/c4t-but-s4d/ctfcup-2024-igra/internal/boss"
 	"github.com/c4t-but-s4d/ctfcup-2024-igra/internal/geometry"
 	"github.com/c4t-but-s4d/ctfcup-2024-igra/internal/object"
 	"github.com/c4t-but-s4d/ctfcup-2024-igra/internal/player"
@@ -24,6 +25,9 @@ func (e *Engine) Collisions(r *geometry.Rectangle) []object.Collidable {
 	result = collideGeneric(result, r, e.Arcades)
 	result = collideGeneric(result, r, e.Slots)
 	result = collideGeneric(result, r, []*player.Player{e.Player})
+	if e.Boss != nil {
+		result = collideGeneric(result, r, []boss.BOSS{e.Boss})
+	}
 	result = collideGeneric(result, r, e.EnemyBullets)
 
 	return result
