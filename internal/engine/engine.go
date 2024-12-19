@@ -340,8 +340,6 @@ func New(config Config, resourceBundle *resources.Bundle, dialogProvider dialog.
 						),
 						bulletImg,
 					)
-					// FIXME: real item.
-					bossItemName = "finka"
 				} else {
 					bossObj = boss.NewV1(
 						object.NewRendered(
@@ -355,8 +353,9 @@ func New(config Config, resourceBundle *resources.Bundle, dialogProvider dialog.
 						),
 						bulletImg,
 					)
-					bossItemName = o.Properties.GetString("item")
 				}
+
+				bossItemName = o.Properties.GetString("item")
 			case "slots":
 				img := resourceBundle.GetSprite(resources.SpriteType(o.Properties.GetString("sprite")))
 				slotMachine := casino.NewSlotMachine(

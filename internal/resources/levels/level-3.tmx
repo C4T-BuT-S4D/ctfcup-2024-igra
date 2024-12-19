@@ -1731,6 +1731,7 @@
   </object>
   <object id="392" name="v2" type="boss" x="4172.04" y="1823.49" width="186.468" height="188.927">
    <properties>
+    <property name="item" value="cross"/>
     <property name="sprite" value="guinea"/>
    </properties>
   </object>
