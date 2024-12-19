@@ -16,19 +16,20 @@ const (
 )
 
 type FontBundle struct {
-	cache map[FontType]text.Face
+	cache map[string]text.Face
 	m     sync.Mutex
 }
 
 func newFontBundle() *FontBundle {
-	return &FontBundle{cache: make(map[FontType]text.Face)}
+	return &FontBundle{cache: make(map[string]text.Face)}
 }
 
-func (m *FontBundle) GetFontFace(t FontType) text.Face {
+func (m *FontBundle) GetFontFace(t FontType, size float64) text.Face {
 	m.m.Lock()
 	defer m.m.Unlock()
+	cacheKey := fmt.Sprintf("%s-%.2f", t, size)
 
-	if face, ok := m.cache[t]; ok {
+	if face, ok := m.cache[cacheKey]; ok {
 		return face
 	}
 
@@ -45,13 +46,14 @@ func (m *FontBundle) GetFontFace(t FontType) text.Face {
 	face := &text.GoTextFace{
 		Source:    source,
 		Direction: text.DirectionLeftToRight,
-		Size:      72,
+		//Size:      72,
+		Size: size,
 	}
 
-	if t == FontDialog {
-		face.Size = 24
-	}
+	//if t == FontDialog {
+	//	face.Size = 24
+	//}
 
-	m.cache[t] = face
+	m.cache[cacheKey] = face
 	return face
 }

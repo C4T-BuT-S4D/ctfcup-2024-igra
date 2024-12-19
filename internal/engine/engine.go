@@ -594,9 +594,17 @@ func (e *Engine) SaveSnapshot(snapshot *Snapshot) error {
 	return nil
 }
 
+func (e *Engine) soulsFont() text.Face {
+	return e.resourceBundle.GetFontFace(resources.FontSouls, camera.WIDTH/16)
+}
+
+func (e *Engine) dialogFont() text.Face {
+	return e.resourceBundle.GetFontFace(resources.FontDialog, camera.WIDTH/40)
+}
+
 func (e *Engine) drawDiedScreen(screen *ebiten.Image) {
-	face := e.resourceBundle.GetFontFace(resources.FontSouls)
 	redColor := color.RGBA{R: 255, G: 0, B: 0, A: 255}
+	face := e.soulsFont()
 
 	width, _ := text.Measure("YOU DIED", face, 0)
 
@@ -607,7 +615,7 @@ func (e *Engine) drawDiedScreen(screen *ebiten.Image) {
 }
 
 func (e *Engine) drawYouWinScreen(screen *ebiten.Image) {
-	face := e.resourceBundle.GetFontFace(resources.FontSouls)
+	face := e.soulsFont()
 	gColor := color.RGBA{R: 0, G: 255, B: 0, A: 255}
 
 	width, _ := text.Measure("YOU WIN", face, 0)
@@ -623,7 +631,7 @@ func (e *Engine) drawNotification(screen *ebiten.Image) {
 		return
 	}
 
-	face := e.resourceBundle.GetFontFace(resources.FontDialog)
+	face := e.dialogFont()
 	yellow := color.RGBA{R: 255, G: 255, B: 0, A: 255}
 
 	width, _ := text.Measure(e.notificationText, face, 0)
@@ -665,7 +673,7 @@ func (e *Engine) drawArcadeState(screen *ebiten.Image) {
 		txt, txtC = "YOU WIN. PRESS ESC TO CONTINUE", colors.Green
 	}
 
-	face := e.resourceBundle.GetFontFace(resources.FontSouls)
+	face := e.soulsFont()
 	width, _ := text.Measure(txt, face, 0)
 	textOp := &text.DrawOptions{}
 	textOp.GeoM.Translate(camera.WIDTH/2-width/2, camera.HEIGHT/2)
@@ -691,7 +699,7 @@ func (e *Engine) drawNPCDialog(screen *ebiten.Image) {
 
 	// Draw dialog text.
 	dtx, dty := float64(ibx+camera.WIDTH/32), float64(iby+camera.HEIGHT/32)
-	face := e.resourceBundle.GetFontFace(resources.FontDialog)
+	face := e.dialogFont()
 	faceMetrics := face.Metrics()
 	lineHeight := faceMetrics.HAscent + faceMetrics.HDescent
 	txt := e.activeNPC.Dialog.State().Text
@@ -804,9 +812,9 @@ func (e *Engine) Draw(screen *ebiten.Image) {
 	}
 
 	if !e.Player.IsDead() {
-		face := e.resourceBundle.GetFontFace(resources.FontDialog)
-		start := float64(16)
-		step := float64(36)
+		face := e.dialogFont()
+		start := float64(camera.WIDTH / 80)
+		step := float64(camera.WIDTH / 32)
 		index := float64(0)
 
 		teamtxt := fmt.Sprintf("Team %s", e.TeamName)
