@@ -153,13 +153,16 @@ func (d *InteractiveBinary) getOutput() string {
 func (d *InteractiveBinary) stopBinary() {
 	if d.writer != nil {
 		d.writer.Close()
+		d.writer = nil
 	}
 	if d.reader != nil {
 		d.reader.Close()
+		d.reader = nil
 	}
 	if d.cmd != nil && d.cmd.Process != nil {
 		d.cmd.Process.Kill()
 		d.cmd.Wait()
+		d.cmd = nil
 	}
 }
 
