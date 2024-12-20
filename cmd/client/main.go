@@ -4,10 +4,11 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"google.golang.org/grpc/encoding/gzip"
 	"os"
 	"os/signal"
 	"syscall"
+
+	"google.golang.org/grpc/encoding/gzip"
 
 	"github.com/c4t-but-s4d/ctfcup-2024-igra/internal/arcade"
 	"github.com/c4t-but-s4d/ctfcup-2024-igra/internal/resources"
@@ -212,7 +213,7 @@ func main() {
 			)
 		}
 
-		conn, err := grpc.DialContext(ctx, *serverAddr, opts...)
+		conn, err := grpc.NewClient(*serverAddr, opts...)
 		if err != nil {
 			logrus.Fatalf("Failed to connect to server: %v", err)
 		}
