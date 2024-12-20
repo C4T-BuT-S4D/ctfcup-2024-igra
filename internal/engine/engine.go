@@ -271,19 +271,6 @@ func New(config Config, resourceBundle *resources.Bundle, dialogProvider dialog.
 					o.Width,
 					o.Height,
 				))
-			case "moving_spike":
-				spikes = append(spikes, damage.NewMovingSpike(
-					geometry.Point{
-						X: o.X,
-						Y: o.Y,
-					},
-					o.Width,
-					o.Height,
-					resourceBundle.GetDirectionalSprite("spike", o.Properties.GetString("direction")),
-					physics.ParsePath(o.Properties.GetString("path")),
-					o.Properties.GetInt("distance"),
-					o.Properties.GetInt("speed"),
-				))
 			case "platform":
 				sprite := lo.
 					If(strings.HasPrefix(o.Name, "boss"), resources.SpritePlatformWide).

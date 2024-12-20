@@ -18,10 +18,3 @@ func NewSpike(origin geometry.Point, img *ebiten.Image, width, height float64) *
 		Damageable:   NewDamageable(100),
 	}
 }
-
-func NewMovingSpike(origin geometry.Point, width, height float64, image *ebiten.Image, path physics.MovementPath, distance, speed int) *Spike {
-	return &Spike{
-		MovingObject: physics.NewMovingObject(origin, width, height, image, path, distance, speed),
-		Damageable:   NewDamageable(100),
-	}
-}
