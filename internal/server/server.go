@@ -5,9 +5,9 @@ import (
 	"errors"
 	"io"
 	"sync"
+	"sync/atomic"
 
 	"github.com/sirupsen/logrus"
-	"go.uber.org/atomic"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/peer"
 	"google.golang.org/grpc/status"
@@ -18,10 +18,9 @@ import (
 
 func New(game *Game, factory engine.Factory, round int64) *GameServer {
 	return &GameServer{
-		factory:    factory,
-		game:       game,
-		numStreams: atomic.NewInt64(0),
-		round:      round,
+		factory: factory,
+		game:    game,
+		round:   round,
 	}
 }
 
@@ -29,7 +28,7 @@ type GameServer struct {
 	gameserverpb.UnimplementedGameServerServiceServer
 
 	factory      engine.Factory
-	numStreams   *atomic.Int64
+	connected    atomic.Bool
 	game         *Game
 	round        int64
 	mu           sync.Mutex
@@ -41,10 +40,10 @@ func (g *GameServer) Ping(context.Context, *gameserverpb.PingRequest) (*gameserv
 }
 
 func (g *GameServer) ProcessEvent(stream gameserverpb.GameServerService_ProcessEventServer) error {
-	defer g.numStreams.Dec()
-	if g.numStreams.Inc() > 1 {
+	if !g.connected.CompareAndSwap(false, true) {
 		return status.Error(codes.ResourceExhausted, "only one client connection allowed")
 	}
+	defer g.connected.Store(false)
 
 	p, _ := peer.FromContext(stream.Context())
 	if p == nil {
