@@ -27,8 +27,6 @@ func (sp *StandardProvider) Get(id string) (Dialog, error) {
 	switch id {
 	case "test-npc":
 		return NewDummy("Hello, I'm a test NPC!\n 2 + 2 = ?", "4"), nil
-	case "rop-npc":
-		return NewBinary("./internal/resources/dialogs/rop", "HELLO, COMRAD.CAN YOU GIVE ME THE ADDRESS FROM WHERE THEY WANT TO ATTACK US?", "you win", true), nil
 	case "crackme-npc":
 		return NewBinary("./internal/resources/dialogs/crackme", "Give me the password to enter the covenant:", "gj", false), nil
 	case "guess-npc":

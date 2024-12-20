@@ -327,33 +327,18 @@ func New(config Config, resourceBundle *resources.Bundle, dialogProvider dialog.
 			case "boss":
 				img := resourceBundle.GetSprite(resources.SpriteType(o.Properties.GetString("sprite")))
 				bulletImg := resourceBundle.GetSprite(resources.SpriteBullet)
-				if o.Name == "v2" {
-					bossObj = boss.NewV2(
-						object.NewRendered(
-							geometry.Point{
-								X: o.X,
-								Y: o.Y,
-							},
-							img,
-							o.Width,
-							o.Height,
-						),
-						bulletImg,
-					)
-				} else {
-					bossObj = boss.NewV1(
-						object.NewRendered(
-							geometry.Point{
-								X: o.X,
-								Y: o.Y,
-							},
-							img,
-							o.Width,
-							o.Height,
-						),
-						bulletImg,
-					)
-				}
+				bossObj = boss.NewV1(
+					object.NewRendered(
+						geometry.Point{
+							X: o.X,
+							Y: o.Y,
+						},
+						img,
+						o.Width,
+						o.Height,
+					),
+					bulletImg,
+				)
 
 				bossItemName = o.Properties.GetString("item")
 			case "slots":
@@ -398,10 +383,6 @@ func New(config Config, resourceBundle *resources.Bundle, dialogProvider dialog.
 			return i.Name == bossItemName
 		})
 		bossPortal = portalsMap["boss-exit"]
-	}
-
-	if b, ok := bossObj.(*boss.V2); ok {
-		b.SetPlatforms(bossPlatforms)
 	}
 
 	for _, n := range npcs {
