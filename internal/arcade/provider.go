@@ -12,8 +12,6 @@ func (sp *LocalProvider) Get(id string) (Game, error) {
 	switch id {
 	case "simple":
 		return newSimpleGame(), nil
-	case "maze":
-		return newBinaryGame("./internal/resources/arcades/maze"), nil
 	default:
 		return nil, fmt.Errorf("unknown arcade id: %s", id)
 	}
