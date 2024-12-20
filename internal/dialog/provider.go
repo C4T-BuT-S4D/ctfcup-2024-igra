@@ -31,10 +31,6 @@ func (sp *StandardProvider) Get(id string) (Dialog, error) {
 		return NewBinary("./internal/resources/dialogs/crackme", "Give me the password to enter the covenant:", "gj", false), nil
 	case "guess-npc":
 		return NewGuess("Hello.")
-	case "steve-npc":
-		return NewSteve(), nil
-	case "khajiit-npc":
-		return NewKhajiit("CD Player", 1000), nil
 	default:
 		return nil, fmt.Errorf("unknown dialog id: %s", id)
 	}
