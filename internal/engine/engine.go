@@ -16,12 +16,10 @@ import (
 	"path"
 	"path/filepath"
 	"slices"
-	"strconv"
 	"strings"
 	"time"
 
 	"github.com/c4t-but-s4d/ctfcup-2024-igra/internal/boss"
-	"github.com/c4t-but-s4d/ctfcup-2024-igra/internal/casino"
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/text/v2"
 	"github.com/hajimehoshi/ebiten/v2/vector"
@@ -73,7 +71,6 @@ type Engine struct {
 	Platforms        []*platform.Platform     `json:"-" msgpack:"platforms"`
 	NPCs             []*npc.NPC               `json:"-" msgpack:"npcs"`
 	Arcades          []*arcade.Machine        `json:"-" msgpack:"arcades"`
-	Slots            []*casino.SlotMachine    `json:"-" msgpack:"slots"`
 	EnemyBullets     []*damage.Bullet         `json:"-" msgpack:"enemyBullets"`
 	BackgroundImages []*tiles.BackgroundImage `json:"-" msgpack:"backgroundImages"`
 
@@ -212,7 +209,6 @@ func New(config Config, resourceBundle *resources.Bundle, dialogProvider dialog.
 		platforms     []*platform.Platform
 		npcs          []*npc.NPC
 		arcades       []*arcade.Machine
-		slots         []*casino.SlotMachine
 		bossObj       boss.BOSS
 		bossItem      *item.Item
 		bossPortal    *portal.Portal
@@ -310,22 +306,6 @@ func New(config Config, resourceBundle *resources.Bundle, dialogProvider dialog.
 				))
 			case "boss-win":
 				bossWinPoint = &geometry.Point{X: o.X, Y: o.Y}
-			case "slots":
-				img := resourceBundle.GetSprite(resources.SpriteType(o.Properties.GetString("sprite")))
-				slotMachine := casino.NewSlotMachine(
-					geometry.Point{
-						X: o.X,
-						Y: o.Y,
-					},
-					img,
-					o.Width,
-					o.Height,
-					o.Properties.GetInt("coins"),
-					o.Properties.GetInt("cooldown"),
-					o.Properties.GetInt("seed"),
-					o.Properties.GetFloat("probability"),
-				)
-				slots = append(slots, slotMachine)
 			case "arcade":
 				img := resourceBundle.GetSprite(resources.SpriteArcade)
 				arc, err := arcadeProvider.Get(o.Name)
@@ -412,7 +392,6 @@ func New(config Config, resourceBundle *resources.Bundle, dialogProvider dialog.
 		BossPortal:       bossPortal,
 		BossWinPoint:     bossWinPoint,
 		Arcades:          arcades,
-		Slots:            slots,
 		resourceBundle:   resourceBundle,
 		snapshotsDir:     config.SnapshotsDir,
 		playerSpawn:      playerPos,
@@ -499,9 +478,6 @@ func (e *Engine) Reset() {
 	*e.Player.Physical = physics.Physical{}
 	e.activeNPC = nil
 	e.activeArcade = nil
-	for _, sm := range e.Slots {
-		sm.Reset()
-	}
 	e.notificationText = ""
 	e.notificationEndTick = 0
 	e.EnemyBullets = nil
@@ -974,11 +950,6 @@ func (e *Engine) Update(inp *input.Input) error {
 		}
 	}
 
-	availableSlots := e.CheckSlotsClose()
-	if availableSlots != nil && inp.IsKeyNewlyPressed(ebiten.KeyE) {
-		e.PlaySlots(availableSlots)
-	}
-
 	if e.notificationEndTick > 0 && e.Tick >= e.notificationEndTick {
 		e.notificationText = ""
 		e.notificationEndTick = 0
@@ -1216,30 +1187,6 @@ func (e *Engine) CheckArcadeClose() *arcade.Machine {
 	}
 
 	return nil
-}
-
-func (e *Engine) CheckSlotsClose() *casino.SlotMachine {
-	for s := range Collide(e.Player.Rectangle(), e.Slots) {
-		if s.LastTriggered+s.Cooldown > e.Tick {
-			continue
-		}
-
-		return s
-	}
-
-	return nil
-}
-
-func (e *Engine) PlaySlots(s *casino.SlotMachine) {
-	if s.Won() {
-		e.Player.Coins += s.Coins
-		e.notificationText = "Congrats! You won " + strconv.Itoa(s.Coins) + " coins!"
-	} else {
-		e.notificationText = "Aww. Try again next time!"
-	}
-	e.notificationEndTick = e.Tick + ebiten.TPS()*3
-
-	s.LastTriggered = e.Tick
 }
 
 func (e *Engine) Checksum() (string, error) {
