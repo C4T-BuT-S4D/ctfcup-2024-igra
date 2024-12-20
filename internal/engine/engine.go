@@ -214,7 +214,6 @@ func New(config Config, resourceBundle *resources.Bundle, dialogProvider dialog.
 		arcades       []*arcade.Machine
 		slots         []*casino.SlotMachine
 		bossObj       boss.BOSS
-		bossItemName  string
 		bossItem      *item.Item
 		bossPortal    *portal.Portal
 		bossWinPoint  *geometry.Point
@@ -311,23 +310,6 @@ func New(config Config, resourceBundle *resources.Bundle, dialogProvider dialog.
 				))
 			case "boss-win":
 				bossWinPoint = &geometry.Point{X: o.X, Y: o.Y}
-			case "boss":
-				img := resourceBundle.GetSprite(resources.SpriteType(o.Properties.GetString("sprite")))
-				bulletImg := resourceBundle.GetSprite(resources.SpriteBullet)
-				bossObj = boss.NewV1(
-					object.NewRendered(
-						geometry.Point{
-							X: o.X,
-							Y: o.Y,
-						},
-						img,
-						o.Width,
-						o.Height,
-					),
-					bulletImg,
-				)
-
-				bossItemName = o.Properties.GetString("item")
 			case "slots":
 				img := resourceBundle.GetSprite(resources.SpriteType(o.Properties.GetString("sprite")))
 				slotMachine := casino.NewSlotMachine(
@@ -363,13 +345,6 @@ func New(config Config, resourceBundle *resources.Bundle, dialogProvider dialog.
 				))
 			}
 		}
-	}
-
-	if bossItemName != "" {
-		bossItem, _ = lo.Find(items, func(i *item.Item) bool {
-			return i.Name == bossItemName
-		})
-		bossPortal = portalsMap["boss-exit"]
 	}
 
 	for _, n := range npcs {
