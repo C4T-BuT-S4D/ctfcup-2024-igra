@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CTFCUP 2024 Final</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        h1 {
+            text-align: center;
+            color: #2c3e50;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: center;
+        }
+        th {
+            background-color: #f2f2f2;
+            font-weight: bold;
+        }
+        .team-name {
+            font-weight: bold;
+            color: #2c3e50;
+            text-align: left;
+        }
+        .score {
+            font-size: 1.2em;
+            color: #27ae60;
+        }
+        .level-header {
+            background-color: #ecf0f1;
+        }
+        .item-image {
+            width: 40px;
+            height: 40px;
+            object-fit: cover;
+            border-radius: 5px;
+            border: 2px solid transparent;
+            transition: all 0.3s ease;
+        }
+        .collected .item-image {
+            border-color: #2ecc71;
+        }
+        .not-collected .item-image {
+            border-color: #e74c3c;
+            opacity: 0.6;
+        }
+        #error-message {
+            color: #e74c3c;
+            text-align: center;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+<h1>CTFCUP 2024 FINAL</h1>
+<div id="error-message" role="alert" aria-live="assertive"></div>
+<div id="scoreboard-container">
+    <!-- Table will be dynamically inserted here -->
+</div>
+
+<script>
+    // Simulated mapping of item names to image paths
+    const itemImagePaths = {
+        // level-1
+        'cheese': '/sprites/cheese.png',
+        'mushroom': '/sprites/mushroom.png',
+        'troyka': '/sprites/troyka.png',
+        'catfood': '/sprites/catfood.png',
+        // level-2
+        'podorozhnik': '/sprites/podorozhnik.png',
+        'cdplayer': '/sprites/cdplayer.png',
+        'umbrella': '/sprites/umbrella.png',
+        'glass': '/sprites/glass.png',
+        // level-3
+        'branch': '/sprites/branch.png',
+        'altboots': '/sprites/altboots.png',
+        'finka': '/sprites/finka.png',
+        'cross': '/sprites/cross.png',
+        // Add more items as needed
+    };
+
+    async function fetchScoreboard() {
+        try {
+            const response = await fetch('/api/scoreboard');
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+            const data = await response.json();
+            return data;
+        } catch (error) {
+            console.error('Error fetching scoreboard:', error);
+            document.getElementById('error-message').textContent = 'Error loading scoreboard. Please try again later.';
+            return null;
+        }
+    }
+
+    function formatDate(dateString) {
+        if (dateString === "0001-01-01T00:00:00Z") {
+            return 'N/A';
+        }
+        const date = new Date(dateString);
+        return date.toLocaleString();
+    }
+
+    function createItemElement(item) {
+        const itemDiv = document.createElement('div');
+        itemDiv.className = item.collected ? 'collected' : 'not-collected';
+
+        const img = document.createElement('img');
+        img.src = itemImagePaths[item.name] || '/placeholder.svg';
+        img.alt = item.name;
+        img.title = item.name;
+        img.className = 'item-image';
+        itemDiv.appendChild(img);
+
+        return itemDiv;
+    }
+
+    function renderScoreboard(data) {
+        const container = document.getElementById('scoreboard-container');
+        container.innerHTML = ''; // Clear existing content
+
+        // Determine all unique levels and their items
+        const levelItems = new Map();
+        data.forEach(team => {
+            team.levels?.forEach(level => {
+                if (!levelItems.has(level.level)) {
+                    levelItems.set(level.level, new Set());
+                }
+                level.items.forEach(item => levelItems.get(level.level).add(item.name));
+            });
+        });
+
+        // Create table
+        const table = document.createElement('table');
+        const thead = document.createElement('thead');
+        const headerRow = document.createElement('tr');
+
+        // Add fixed columns
+        ['Team', 'Score', 'Last Updated'].forEach(text => {
+            const th = document.createElement('th');
+            th.textContent = text;
+            headerRow.appendChild(th);
+        });
+
+        // Add level columns
+        levelItems.forEach((items, level) => {
+            const levelHeader = document.createElement('th');
+            levelHeader.textContent = level;
+            levelHeader.className = 'level-header';
+            levelHeader.colSpan = items.size;
+            headerRow.appendChild(levelHeader);
+        });
+
+        thead.appendChild(headerRow);
+
+        // Add item subheaders
+        const itemRow = document.createElement('tr');
+        ['Team', 'Score', 'Last Updated'].forEach(() => {
+            const th = document.createElement('th');
+            itemRow.appendChild(th);
+        });
+
+        levelItems.forEach((items) => {
+            items.forEach(item => {
+                const th = document.createElement('th');
+                th.textContent = item;
+                itemRow.appendChild(th);
+            });
+        });
+
+        thead.appendChild(itemRow);
+        table.appendChild(thead);
+
+        // Create table body
+        const tbody = document.createElement('tbody');
+        data.forEach(team => {
+            const row = document.createElement('tr');
+
+            // Add fixed columns
+            const nameCell = document.createElement('td');
+            nameCell.className = 'team-name';
+            nameCell.textContent = team.name;
+            row.appendChild(nameCell);
+
+            const scoreCell = document.createElement('td');
+            scoreCell.className = 'score';
+            scoreCell.textContent = team.score;
+            row.appendChild(scoreCell);
+
+            const updatedCell = document.createElement('td');
+            updatedCell.textContent = formatDate(team.updatedAt);
+            row.appendChild(updatedCell);
+
+            // Add item cells for each level
+            levelItems.forEach((items, level) => {
+                const teamLevel = team.levels?.find(l => l.level === level);
+                items.forEach(itemName => {
+                    const cell = document.createElement('td');
+                    if (teamLevel) {
+                        const item = teamLevel.items.find(i => i.name === itemName);
+                        if (item) {
+                            cell.appendChild(createItemElement(item));
+                        }
+                    }
+                    row.appendChild(cell);
+                });
+            });
+
+            tbody.appendChild(row);
+        });
+
+        table.appendChild(tbody);
+        container.appendChild(table);
+    }
+
+    async function updateScoreboard() {
+        const data = await fetchScoreboard();
+        if (data) {
+            renderScoreboard(data);
+        }
+    }
+
+    // Initial load
+    updateScoreboard();
+
+    // Refresh every 30 seconds
+    setInterval(updateScoreboard, 30000);
+</script>
+</body>
+</html>
+
