@@ -8,6 +8,7 @@ import (
 	"errors"
 	"fmt"
 	"image/color"
+
 	// Register png codec.
 	_ "image/png"
 	"math"
@@ -65,7 +66,7 @@ type dialogControl struct {
 
 type Engine struct {
 	Tiles            []*tiles.StaticTile      `json:"-" msgpack:"-"`
-	Camera           *camera.Camera           `json:"-" msgpack:"camera"`
+	Camera           *camera.Camera           `json:"-" msgpack:"-"`
 	Player           *player.Player           `json:"-" msgpack:"player"`
 	Items            []*item.Item             `json:"items" msgpack:"items"`
 	Portals          []*portal.Portal         `json:"-" msgpack:"portals"`
