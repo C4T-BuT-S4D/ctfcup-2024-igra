@@ -24,7 +24,6 @@ require (
 	github.com/ebitengine/purego v0.8.0 // indirect
 	github.com/fsnotify/fsnotify v1.7.0 // indirect
 	github.com/go-text/typesetting v0.2.0 // indirect
-	github.com/golang/protobuf v1.5.4 // indirect
 	github.com/hajimehoshi/go-mp3 v0.3.4 // indirect
 	github.com/hashicorp/hcl v1.0.0 // indirect
 	github.com/improbable-eng/grpc-web v0.15.1-0.20230209220825-1d9bbb09a099 // indirect
