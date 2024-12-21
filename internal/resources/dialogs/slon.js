@@ -44,6 +44,8 @@ askQuestions(questions).then((answers) => {
 
     if (regex.test(name)) {
         console.log("Sorry, you can't use that name.");
+        rl.close();
+        return;
     }
 
     if (parseInt(answer1) === n1 && parseInt(answer2) === n2) {
