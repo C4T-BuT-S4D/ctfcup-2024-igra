@@ -1,4 +1,5 @@
 listen: "0.0.0.0:5555"
+sprites_dir: internal/resources/sprites
 teams:
   - name: "Test"
     snapshots_path:

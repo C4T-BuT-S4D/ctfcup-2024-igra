@@ -1,6 +1,7 @@
 package main
 
 import (
+	"embed"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -18,6 +19,9 @@ import (
 
 	"github.com/c4t-but-s4d/ctfcup-2024-igra/internal/logging"
 )
+
+//go:embed frontend
+var frontendFS embed.FS
 
 type Item struct {
 	Name        string    `json:"name"`
@@ -48,9 +52,10 @@ type Round struct {
 	start time.Time
 }
 type Config struct {
-	Listen string  `mapstructure:"listen"`
-	Teams  []Team  `mapstructure:"teams"`
-	Rounds []Round `mapstructure:"rounds"`
+	Listen     string  `mapstructure:"listen"`
+	Teams      []Team  `mapstructure:"teams"`
+	Rounds     []Round `mapstructure:"rounds"`
+	SpritesDir string  `mapstructure:"sprites_dir"`
 }
 
 type snapshotItem struct {
@@ -176,6 +181,9 @@ func getScoreboard(cfg *Config) ([]TeamScore, error) {
 					lastCollectedAt = ct
 				}
 			}
+			slices.SortFunc(levelScore.Items, func(a, b Item) int {
+				return strings.Compare(a.Name, b.Name)
+			})
 
 			levelScore.Level = round.Level
 			teamScore.Levels = append(teamScore.Levels, levelScore)
@@ -213,6 +221,16 @@ func main() {
 	logrus.Infof("Parsed config: %+v", cfg)
 
 	mux := http.NewServeMux()
+	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path == "/" {
+			http.ServeFileFS(w, r, frontendFS, "frontend/index.html")
+			return
+		}
+		http.FileServer(http.FS(frontendFS)).ServeHTTP(w, r)
+	})
+	if cfg.SpritesDir != "" {
+		mux.Handle("/sprites/", http.StripPrefix("/sprites/", http.FileServer(http.Dir(cfg.SpritesDir))))
+	}
 	mux.HandleFunc("/api/scoreboard", func(w http.ResponseWriter, r *http.Request) {
 		scores, err := getScoreboard(cfg)
 		if err != nil {
