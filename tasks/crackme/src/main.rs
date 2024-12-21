@@ -1,17 +1,22 @@
 use std::cmp;
 use std::io;
 
+use goldberg::goldberg_int;
+use goldberg::goldberg_stmts;
+
 fn hash(s: &[u8]) -> u64 {
-    let mut h = 0u64;
+    goldberg_stmts! {
+        let mut h = 0u64;
 
-    for c in s.iter() {
-        h = (h ^ (*c as u64)).wrapping_mul(31337);
+        for c in s.iter() {
+            h = (h ^ (*c as u64)).wrapping_mul(31337);
+        }
+
+        h
     }
-
-    h
 }
 
-// e2dae8c479aee65bffbc0da49c195c99
+// E2DAE8C479AEE65BFFBC0DA49C195C99
 
 fn check_flag(flag: &str) -> bool {
     if flag.len() != 32 {
@@ -19,14 +24,14 @@ fn check_flag(flag: &str) -> bool {
     }
 
     let target = [
-        11200688220910254682,
-        11200380368408825194,
-        16146349676620574858,
-        11200565025114669588,
-        12165273152048139049,
-        9396870039570576529,
-        18071888434317316754,
-        14218471961505630534,
+        goldberg_int! {11200688220910254682u64},
+        goldberg_int! {11200380368408825194u64},
+        goldberg_int! {16146349676620574858u64},
+        goldberg_int! {11200565025114669588u64},
+        goldberg_int! {12165273152048139049u64},
+        goldberg_int! {9396870039570576529u64},
+        goldberg_int! {18071888434317316754u64},
+        goldberg_int! {14218471961505630534u64},
     ];
 
     let mut i = 0;
