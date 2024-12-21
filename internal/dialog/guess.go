@@ -20,12 +20,12 @@ func NewGuess(greet string) (Dialog, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &GuessDialog{greet: greet, pcg: rand.NewPCG(seed1.Uint64(), 0)}, nil
+	return &GuessDialog{greet: greet, rand: rand.New(rand.NewPCG(seed1.Uint64(), 0))}, nil
 }
 
 type GuessDialog struct {
 	s     State
-	pcg   *rand.PCG
+	rand  *rand.Rand
 	greet string
 }
 
@@ -34,7 +34,7 @@ func (d *GuessDialog) Greeting() {
 }
 
 func (d *GuessDialog) Feed(text string, _ int) {
-	answer := d.pcg.Uint64()
+	answer := d.rand.Uint64N(1000_000_000_000)
 	if guess, err := strconv.ParseUint(text, 10, 64); err != nil {
 		d.s.Text += fmt.Sprintf("\n encountered error converting int '%s'!", err.Error())
 	} else if answer != guess {
