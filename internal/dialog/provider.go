@@ -34,7 +34,7 @@ func (sp *StandardProvider) Get(id string) (Dialog, error) {
 	case "khajiit-npc":
 		return NewKhajiit("CD Player", 1000), nil
 	case "slon-npc":
-		return NewInteractiveBinary("./internal/resources/dialogs/slon.js", "Hello, I'm slonik! Let's play the game!", "WIN", "TRY AGAIN"), nil
+		return NewBinary("./internal/resources/dialogs/slon/slon.js", "Hello, I'm slonik! Let's play the game!\n What's your name: ", "YOU WIN", false), nil
 	default:
 		return nil, fmt.Errorf("unknown dialog id: %s", id)
 	}
