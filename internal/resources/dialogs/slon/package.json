@@ -1,0 +1,16 @@
+{
+  "name": "dialogs",
+  "version": "1.0.0",
+  "description": "",
+  "main": "slon.js",
+  "dependencies": {
+    "dompurify": "^3.2.3",
+    "jsdom": "^25.0.1"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC"
+}
