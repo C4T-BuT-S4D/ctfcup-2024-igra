@@ -11,7 +11,6 @@ import (
 
 	// Register png codec.
 	_ "image/png"
-	"math"
 	"math/rand/v2"
 	"os"
 	"path"
@@ -738,20 +737,9 @@ func (e *Engine) Draw(screen *ebiten.Image) {
 					op.GeoM.Translate(e.Player.Width, 0)
 				}
 			case *tiles.StaticTile:
-				// Yes, if's, not else-if's. Do not question this.
-				if o.Flips.Horizontal {
-					op.GeoM.Scale(-1, 1)
-					op.GeoM.Translate(o.Width, 0)
-				}
-				if o.Flips.Vertical {
-					op.GeoM.Scale(1, -1)
-					op.GeoM.Translate(0, o.Height)
-				}
-				if o.Flips.Diagonal {
-					op.GeoM.Rotate(-math.Pi / 2)
-					op.GeoM.Scale(-1, 1)
-					op.GeoM.Translate(o.Width, o.Height)
-				}
+				o.ApplyFlips(op)
+			case *tiles.BackgroundImage:
+				o.ApplyFlips(op)
 			case *damage.Bullet:
 				op.GeoM.Scale(4, 4)
 				op.GeoM.Translate(-2, 0)
