@@ -26,9 +26,19 @@ func (d *BinaryDialog) Greeting() {
 
 func (d *BinaryDialog) getBinaryOutput(input string) (string, error) {
 	cmd := exec.Command(d.binaryPath)
+	fmt.Println([]byte(input))
 
 	if d.hex {
-		inputBytes, err := hex.DecodeString(input)
+		inputFiltered := make([]byte, 0, len(input))
+		for _, c := range []byte(input) {
+			if ('a' <= c && c <= 'z') ||
+				('A' <= c && c <= 'Z') ||
+				('0' <= c && c <= '9') {
+
+				inputFiltered = append(inputFiltered, c)
+			}
+		}
+		inputBytes, err := hex.DecodeString(string(inputFiltered))
 		if err != nil {
 			return "", err
 		}
