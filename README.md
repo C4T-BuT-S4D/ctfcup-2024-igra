@@ -54,8 +54,7 @@ AUTH_TOKEN=TestTeam:test go run cmd/client/main.go -s "localhost:8085" -l level-
 | level-3 | altboots    | Arcade      |
 | level-3 | branch      | Engine hack |
 | level-3 | cross       | Boss        |
-| level-3 | finka       | NPC         |
-
+| level-3 | finka       | NPC-task    |
 
 ## Screenshots
 
@@ -71,10 +70,10 @@ AUTH_TOKEN=TestTeam:test go run cmd/client/main.go -s "localhost:8085" -l level-
 
 ![Level 3-1](./screenshots/level-3-1.gif) ![Level 3-2](./screenshots/level-3-2.gif) ![Level 3-3](./screenshots/level-3-3.gif)
 
-
 ## Credits
 
-- [Ivan Novikov](https://github.com/jnovikov): Game development, challenges development, level-design, scoreboard development.
+- [Ivan Novikov](https://github.com/jnovikov): Game development, challenges development, level-design, scoreboard
+  development.
 - [Artem Mikheev](https://github.com/renbou): Game development, challenges development, level-design.
 - [Roman Nikitin](https://github.com/pomo-mondreganto): Game development (bosses).
 - [Nikita Pokrovsky](https://github.com/falamous): Challenges development.
