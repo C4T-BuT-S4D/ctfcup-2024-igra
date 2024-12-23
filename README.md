@@ -74,10 +74,10 @@ AUTH_TOKEN=TestTeam:test go run cmd/client/main.go -s "localhost:8085" -l level-
 
 ## Credits
 
-- [Ivan Novikov](https://github.com/jnovikov): Game development, level-design, scoreboard development.
-- [Artem Mikheev](https://github.com/renbou): Game development, level-design.
+- [Ivan Novikov](https://github.com/jnovikov): Game development, challenges development, level-design, scoreboard development.
+- [Artem Mikheev](https://github.com/renbou): Game development, challenges development, level-design.
 - [Roman Nikitin](https://github.com/pomo-mondreganto): Game development (bosses).
-- [Nikita Pokrovsky](https://github.com/falamous): Challenges (NPC & Arcades) development.
+- [Nikita Pokrovsky](https://github.com/falamous): Challenges development.
 - [Slonser](https://github.com/Slonser): "Slon.js" challenge development.
 - [someone12469](https://github.com/someone12469): "Slava" challenge development.
 - [Galilea Anri](https://vk.com/mangalileathecreativesquad): Artwork.
